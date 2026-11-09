@@ -6,7 +6,7 @@ It does not download music.
 
 ## Build this add-on
 
-Requires macOS 14+, Swift 6, and SSH access to the private LedgeKit repository.
+Requires macOS 14+, Swift 6, and internet access to the public LedgeKit repository.
 Run from this folder, even if you copy it outside the Ledge checkout:
 
 ```sh
