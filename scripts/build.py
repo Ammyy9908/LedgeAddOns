@@ -14,7 +14,8 @@ for package in sorted((root / "add-ons").glob("*")) if (root / "add-ons").exists
     assert re.fullmatch(r"[a-z0-9-]{1,64}", addon_id) and package.name == addon_id
     assert re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", manifest["version"])
     assert manifest["protocolVersion"] == 1
-    assert manifest["capabilities"] == ["spotify-library"]
+    supported = {"spotify-likes": ["spotify-library"], "notifications": ["notification-banners"]}
+    assert addon_id in supported and manifest["capabilities"] == supported[addon_id]
     executable = manifest["executable"]
     assert re.fullmatch(r"[A-Za-z0-9_-]+", executable)
     assert manifest["icon"] == "Assets/Icon.png"
@@ -38,9 +39,31 @@ for package in sorted((root / "add-ons").glob("*")) if (root / "add-ons").exists
         data = destination.read_bytes()
         assert len(data) <= 32 * 1024 * 1024
         files[key] = {"url": base + name, "sha256": hashlib.sha256(data).hexdigest()}
+    listing_path = package / "listing.json"
+    assert listing_path.exists() or addon_id == "spotify-likes", "New submissions require listing.json"
+    listing = json.loads(listing_path.read_text()) if listing_path.exists() else None
+    if listing is not None:
+        from urllib.parse import urlparse
+        for field, limit in [("developer", 120), ("category", 60), ("availability", 120), ("description", 10000)]:
+            assert isinstance(listing[field], str) and 0 < len(listing[field]) <= limit
+        feedback = urlparse(listing["feedbackURL"])
+        assert feedback.scheme == "https" and feedback.hostname and not feedback.username and not feedback.password
+        assert "installs" not in listing, "Install counts are service-owned, never developer supplied"
+        def publish_media(relative, suffix, limit):
+            source = (package / relative).resolve()
+            assert source.is_relative_to(package.resolve()) and source.is_file()
+            assert source.suffix.lower() == suffix
+            data = source.read_bytes()
+            assert 0 < len(data) <= limit
+            name = addon_id + ".preview-" + hashlib.sha256(data).hexdigest()[:16] + suffix
+            shutil.copyfile(source, dist / name)
+            return {"url": base + name, "sha256": hashlib.sha256(data).hexdigest()}
+        assert 1 <= len(listing["screenshots"]) <= 8, "At least one screenshot is required"
+        listing["screenshots"] = [publish_media(path, ".png", 8 * 1024 * 1024) for path in listing["screenshots"]]
+        listing["motionDemo"] = publish_media(listing["motionDemo"], ".mp4", 32 * 1024 * 1024)
     entries.append({"id": addon_id, "name": manifest["name"], "summary": manifest["summary"],
                     "version": manifest["version"], "architectures": ["arm64", "x86_64"],
-                    "files": files})
+                    "files": files, **({"listing": listing} if listing is not None else {})})
 (dist / "catalog.json").write_text(json.dumps({"schemaVersion": 1, "sourceCommit": commit,
                                              "entries": entries}, indent=2) + "\n")
 print(f"Built {len(entries)} catalog entries at {commit}")

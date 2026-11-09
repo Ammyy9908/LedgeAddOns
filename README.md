@@ -1,7 +1,6 @@
 # Ledge Add-on Store
 
-Public source submissions and release catalog for Ledge. The first supported
-integration is Spotify Likes. Other capability types require corresponding host
+Public source submissions and release catalog for Ledge. Supported integrations are Spotify Likes and Notifications (developer preview). Other capability types require corresponding host
 support before a listing can be accepted.
 
 ## Developer workflow
@@ -12,7 +11,7 @@ support before a listing can be accepted.
 2. Fork this repository and clone your fork.
 3. Create a branch. Add a self-contained Swift package under `add-ons/<id>/`.
    Pin LedgeKit to a release using its HTTPS URL. Include addon.json, Sources,
-   Tests, README, and Assets/Icon.png. Never submit credentials or build outputs.
+   Tests, README, Assets/Icon.png and listing.json with preview media (see LISTING.md). Never submit credentials or build outputs.
 4. Run `swift test --package-path add-ons/<id>` and
    `python3 scripts/build.py`. Load the resulting local package in Ledge.
 5. Open a PR against main. Describe permissions, behavior, tests, dependencies and

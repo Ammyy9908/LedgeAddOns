@@ -1,0 +1,14 @@
+{
+  "id": "notifications",
+  "version": "0.1.0",
+  "protocolVersion": 1,
+  "name": "Notifications",
+  "summary": "Mirror visible notification banners in your notch",
+  "description": "After you enable Accessibility and turn on mirroring, Ledge mirrors visible macOS notification banners. Notification history, inline replies and hidden previews are not supported. Text stays on this Mac and is not stored.",
+  "author": "Ledge",
+  "capabilities": [
+    "notification-banners"
+  ],
+  "executable": "Notifications",
+  "icon": "Assets/Icon.png"
+}
