@@ -1,0 +1,9 @@
+{
+  "developer": "Ledge",
+  "category": "System",
+  "availability": "Free developer preview · requires Notifications-enabled Ledge",
+  "description": "Mirror visible macOS notification banners in an expanded notch card. Messages wrap and long text scrolls. Dismiss the card or click away when finished. Enable Accessibility and mirroring in the add-on’s settings; message previews default to off. Keep native macOS banners enabled. Text stays on this Mac. This experimental adapter does not read notification history, recover hidden previews, suppress native banners, or support inline replies. Requires the updated Ledge host with notification-banners support; older hosts cannot install this package. Store media are illustrative examples, not captures of private notifications.",
+  "feedbackURL": "https://github.com/Ammyy9908/LedgeAddOns/issues/new",
+  "screenshots": ["Store/Preview.png"],
+  "motionDemo": "Store/Demo.mp4"
+}
