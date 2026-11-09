@@ -1,0 +1,14 @@
+{
+  "id": "spotify-likes",
+  "version": "1.0.0",
+  "protocolVersion": 1,
+  "name": "Spotify Likes",
+  "summary": "Like Spotify songs from your Ledge player",
+  "description": "Like or unlike the current Spotify song from Ledge.",
+  "author": "Ledge",
+  "capabilities": [
+    "spotify-library"
+  ],
+  "executable": "SpotifyLikes",
+  "icon": "Assets/Icon.png"
+}
