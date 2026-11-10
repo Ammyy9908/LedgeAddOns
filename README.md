@@ -1,6 +1,6 @@
 # Ledge Add-on Store
 
-Public source submissions and release catalog for Ledge. Supported integrations are Spotify Likes and Notifications (developer preview). Other capability types require corresponding host
+Public source submissions and release catalog for Ledge. Supported integrations are Spotify Likes, Notifications (developer preview) and Apple Music Controls (developer preview). Other capability types require corresponding host
 support before a listing can be accepted.
 
 ## Developer workflow
