@@ -1,0 +1,15 @@
+{
+  "id": "apple-music-queue",
+  "version": "0.3.1",
+  "protocolVersion": 1,
+  "name": "Apple Music Controls",
+  "summary": "Favorites, playlists, shuffle, repeat and Playing Next",
+  "description": "Favorite or unfavorite songs, add the current song to your playlists, and view or reorder Apple Music\u2019s actual Playing Next queue. Requires Music automation permission for library actions and an updated Ledge host. Queue access is experimental.",
+  "author": "Ledge",
+  "capabilities": [
+    "apple-music-queue",
+    "apple-music-controls"
+  ],
+  "executable": "AppleMusicQueue",
+  "icon": "Assets/Icon.png"
+}

@@ -8,13 +8,17 @@ dist.mkdir(exist_ok=True)
 commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
 base = f"https://github.com/Ammyy9908/LedgeAddOns/releases/download/catalog-{commit}/"
 entries = []
+# Add-ons whose host loads a native module rather than running the executable target.
+# Apple Music Controls ships its QueueBridge dynamic library under the manifest's executable name.
+packaged_binaries = {"apple-music-queue": "libQueueBridge.dylib"}
 for package in sorted((root / "add-ons").glob("*")) if (root / "add-ons").exists() else []:
     manifest = json.loads((package / "addon.json").read_text())
     addon_id = manifest["id"]
     assert re.fullmatch(r"[a-z0-9-]{1,64}", addon_id) and package.name == addon_id
     assert re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", manifest["version"])
     assert manifest["protocolVersion"] == 1
-    supported = {"spotify-likes": ["spotify-library"], "notifications": ["notification-banners"]}
+    supported = {"spotify-likes": ["spotify-library"], "notifications": ["notification-banners"],
+                 "apple-music-queue": ["apple-music-queue", "apple-music-controls"]}
     assert addon_id in supported and manifest["capabilities"] == supported[addon_id]
     executable = manifest["executable"]
     assert re.fullmatch(r"[A-Za-z0-9_-]+", executable)
@@ -27,7 +31,7 @@ for package in sorted((root / "add-ons").glob("*")) if (root / "add-ons").exists
     binary_dir = pathlib.Path(subprocess.check_output(command + ["--show-bin-path"], text=True).strip())
     files = {}
     for key, source, name in [
-        ("executable", binary_dir / executable, addon_id + ".binary"),
+        ("executable", binary_dir / packaged_binaries.get(addon_id, executable), addon_id + ".binary"),
         ("manifest", package / "addon.json", addon_id + ".manifest.json"),
         ("icon", package / "Assets/Icon.png", addon_id + ".icon.png")
     ]:
