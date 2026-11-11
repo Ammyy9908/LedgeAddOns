@@ -59,7 +59,8 @@ for addon_id, decision in decisions.items():
     manifest = json.loads((package / "addon.json").read_text())
     assert addon_id in supported and manifest["capabilities"] == supported[addon_id], \
         f"{addon_id}: its capabilities need host support in Ledge before it can be listed"
-    assert manifest["protocolVersion"] == 1
+    # 1: one program run per request. 2: a long-lived session (LedgeKit 0.3.0 and later).
+    assert manifest["protocolVersion"] in (1, 2), f"{addon_id}: unsupported protocolVersion"
     executable = manifest["executable"]
     assert re.fullmatch(r"[A-Za-z0-9_-]+", executable)
     assert manifest["icon"] == "Assets/Icon.png"

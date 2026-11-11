@@ -109,6 +109,8 @@ def check_folder(package, problems):
     if not re.fullmatch(r"\d+\.\d+\.\d+", version):
         say(f"version '{version}' must look like 1.2.3")
         return None
+    if manifest.get("protocolVersion") not in (1, 2):
+        say("protocolVersion must be 1 (one run per request) or 2 (a long-lived session)")
     for key in ["name", "author", "summary", "description"]:
         if not str(manifest.get(key, "")).strip():
             say(f"addon.json needs a {key}")
