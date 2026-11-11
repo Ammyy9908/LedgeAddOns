@@ -4,8 +4,10 @@ The Add-on Store for Ledge, as a repository. Every add-on in the Store lives her
 [`add-ons/`](add-ons/). Merging a change publishes it: CI builds the add-on for arm64 and x86_64, writes its
 catalog entry, and every Mac running Ledge sees it the next time the Store opens.
 
-Listed today: Spotify Likes, Notifications (developer preview) and Apple Music Controls (developer preview). Other
-capability types need matching support in the Ledge app before a listing can be accepted.
+Listed today: Spotify Likes, Notifications (developer preview) and Apple Music Controls (developer preview). Any
+add-on can be submitted. Capabilities are open: an add-on may name one Ledge doesn't support yet, and Ledge keeps
+it off until it does. Each catalog entry says which Ledge, LedgeKit and macOS it needs, so the Store can mark an
+add-on your Ledge can't run before you install it.
 
 - **Build an add-on**: [LedgeKit](https://github.com/Ammyy9908/LedgeKit).
 - **Publish yours**: read [CONTRIBUTING.md](CONTRIBUTING.md) and [LISTING.md](LISTING.md), then open a pull request.

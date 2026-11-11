@@ -23,9 +23,6 @@ entries = []
 # Add-ons whose host loads a native module rather than running the executable target.
 # Apple Music Controls ships its QueueBridge dynamic library under the manifest's executable name.
 packaged_binaries = {"apple-music-queue": "libQueueBridge.dylib"}
-# Each capability needs matching support in the Ledge host before an add-on using it can be listed.
-supported = {"spotify-likes": ["spotify-library"], "notifications": ["notification-banners"],
-             "apple-music-queue": ["apple-music-queue", "apple-music-controls"]}
 
 
 def record(destination):
@@ -57,8 +54,6 @@ for addon_id, decision in decisions.items():
         continue
     package = root / "add-ons" / addon_id
     manifest = json.loads((package / "addon.json").read_text())
-    assert addon_id in supported and manifest["capabilities"] == supported[addon_id], \
-        f"{addon_id}: its capabilities need host support in Ledge before it can be listed"
     # 1: one program run per request. 2: a long-lived session (LedgeKit 0.3.0 and later).
     assert manifest["protocolVersion"] in (1, 2), f"{addon_id}: unsupported protocolVersion"
     executable = manifest["executable"]
@@ -108,8 +103,10 @@ for addon_id, decision in decisions.items():
         assert 1 <= len(listing["screenshots"]) <= 8, "At least one screenshot is required"
         listing["screenshots"] = [publish_media(path, ".png", 8 * 1024 * 1024) for path in listing["screenshots"]]
         listing["motionDemo"] = publish_media(listing["motionDemo"], ".mp4", 32 * 1024 * 1024)
+    # Capabilities are open: validate.py checked the names, and Ledge grants only those it supports.
     entries.append({"id": addon_id, "name": manifest["name"], "summary": manifest["summary"],
                     "version": manifest["version"], "architectures": ["arm64", "x86_64"],
+                    "requires": validate.requirements(manifest),
                     "files": files, **({"listing": listing} if listing is not None else {})})
 (dist / "catalog.json").write_text(json.dumps({"schemaVersion": 1, "sourceCommit": commit,
                                              "entries": entries}, indent=2) + "\n")

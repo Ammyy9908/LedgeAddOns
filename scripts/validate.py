@@ -70,6 +70,55 @@ def retired_ids():
     return {item["id"]: item.get("reason", "") for item in data.get("retired", [])}
 
 
+NAME = re.compile(r"[a-z0-9][a-z0-9-]{0,63}")
+RELEASE_VERSION = re.compile(r"\d+\.\d+\.\d+")
+CATEGORIES = {"AI", "Productivity", "Media", "Capture", "Files", "System"}
+
+
+def check_manifest_v2(manifest, say):
+    """The same rules as LedgeKit's AddOnManifest.validate(). Capabilities are open: any well-formed name is
+    accepted, and Ledge grants only those it supports, so a new capability doesn't need this repo to change."""
+    if not re.fullmatch(r"[A-Za-z0-9_-]+", str(manifest.get("executable", ""))):
+        say("executable must be a file name: letters, digits, hyphens and underscores")
+    if manifest.get("icon") != "Assets/Icon.png":
+        say("icon must be Assets/Icon.png")
+    for field in ["capabilities", "surfaces"]:
+        names = manifest.get(field, [])
+        if not isinstance(names, list) or not all(isinstance(n, str) and NAME.fullmatch(n) for n in names):
+            say(f"{field} must be lowercase names: letters, digits and hyphens")
+        elif len(set(names)) != len(names):
+            say(f"{field} lists a name twice")
+    if not isinstance(manifest.get("capabilities"), list):
+        say("addon.json needs a capabilities list (it can be empty)")
+    for field, value in [("kit.minAPI", (manifest.get("kit") or {}).get("minAPI")), ("minLedge", manifest.get("minLedge"))]:
+        if value is not None and not RELEASE_VERSION.fullmatch(str(value)):
+            say(f"{field} must look like 1.2.3")
+    if "kit" in manifest and "minAPI" not in (manifest["kit"] or {}):
+        say("kit needs a minAPI")
+    if manifest.get("minMacOS") is not None and not re.fullmatch(r"\d+(\.\d+){0,2}", str(manifest["minMacOS"])):
+        say("minMacOS must look like 14 or 14.5")
+    if manifest.get("category") is not None and manifest["category"] not in CATEGORIES:
+        say(f"category must be one of {', '.join(sorted(CATEGORIES))}")
+    if "creator" in manifest and not str((manifest["creator"] or {}).get("name", "")).strip():
+        say("creator needs a name")
+    keywords = manifest.get("keywords", [])
+    if not isinstance(keywords, list) or len(keywords) > 20 or any(len(str(k)) > 40 for k in keywords):
+        say("keywords: at most 20, each at most 40 characters")
+
+
+def requirements(manifest):
+    """What a Ledge needs to run the add-on, as the catalog publishes it: Ledge reads this to mark an add-on it
+    can't run before anyone installs it."""
+    requires = {"protocolVersion": manifest.get("protocolVersion", 1)}
+    if (manifest.get("kit") or {}).get("minAPI"):
+        requires["kit"] = manifest["kit"]["minAPI"]
+    if manifest.get("minLedge"):
+        requires["ledge"] = manifest["minLedge"]
+    if manifest.get("minMacOS"):
+        requires["macOS"] = manifest["minMacOS"]
+    return requires
+
+
 def check_folder(package, problems):
     addon_id = package.name
     say = lambda message: problems.append(f"{addon_id}: {message}")
@@ -111,6 +160,7 @@ def check_folder(package, problems):
         return None
     if manifest.get("protocolVersion") not in (1, 2):
         say("protocolVersion must be 1 (one run per request) or 2 (a long-lived session)")
+    check_manifest_v2(manifest, say)
     for key in ["name", "author", "summary", "description"]:
         if not str(manifest.get(key, "")).strip():
             say(f"addon.json needs a {key}")

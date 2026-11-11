@@ -7,9 +7,12 @@ known. `python3 scripts/validate.py` runs the same checks on your machine.
 
 - Build against [LedgeKit](https://github.com/Ammyy9908/LedgeKit), pinned to a release by its HTTPS URL.
 - An add-on is native code that Ledge runs on people's Macs. A maintainer reads every line before it merges.
-- Each capability an add-on uses needs matching support in the Ledge app. Today those are the Spotify library,
-  notification banners and Apple Music controls. For anything new, open an **Add-on idea** issue first, so the
-  host support can be planned before you build.
+- Capabilities are open. Name the ones you use in `addon.json`; Ledge grants those it supports and keeps the
+  rest off. Today it supports `spotify-library`, `notification-banners`, `apple-music-queue` and
+  `apple-music-controls`. If you need something new, open an **Add-on idea** issue, so support can be planned.
+- Say what your add-on needs with the optional manifest v2 fields: `kit.minAPI` (the LedgeKit API level, such as
+  `0.4.0`), `minLedge`, `minMacOS`, plus `category`, `creator`, `source` and `keywords`. The Store build copies the
+  requirements into the catalog, so Ledge can tell people before they install.
 
 ## The short version
 
