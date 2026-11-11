@@ -1,0 +1,29 @@
+Ledge Add-on Store Source-Available Licence
+
+Copyright (c) 2026 Ammyy9908 and the authors of the add-ons in this repository.
+
+This repository holds the source of the Ledge Add-on Store: its scripts, its documentation and the
+add-ons in the add-ons/ folder. It is source-available, not open source.
+
+1. Permitted use. You may read, build, run and test anything in this repository, and modify it, for
+   the purpose of developing, testing or submitting an add-on for Ledge, or of reviewing the code
+   that Ledge installs. You may fork this repository in order to open a pull request against it.
+
+2. Restrictions. You may not distribute this repository, the collection of add-ons it holds, or a
+   substantial part of either, as part of another product, catalog or store, or offer it to others
+   in place of the Ledge Add-on Store, without written permission from the repository owner.
+
+3. Add-ons. Each add-on remains the property of its author. An add-on that includes a LICENSE file
+   in its own folder is licensed under that file instead of this one. An add-on without one is
+   made available under the terms of this licence. By opening a pull request, an author grants the
+   repository owner the right to build, sign, host and distribute that add-on through the Ledge
+   Add-on Store, and to retire it from the Store at any time.
+
+4. Contributions. Changes you contribute outside an add-on folder (scripts, documentation,
+   workflows) are licensed to the repository owner under the terms of this licence.
+
+5. No warranty. Everything in this repository is provided "as is", without warranty of any kind.
+   Add-ons are native code that runs with the permissions of the Ledge app; their authors are
+   responsible for how they behave and how they handle data. In no event shall the repository
+   owner or the authors be liable for any claim, damages or other liability arising from the use
+   of this repository or its add-ons.
