@@ -16,7 +16,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - run: python3 scripts/build.py
+          # Full history, so validation can compare each add-on with the commit the Store was published from.
+          fetch-depth: 0
+      - name: Validate add-on folders, versions and changelogs
+        run: python3 scripts/validate.py
+      - name: Build new versions and republish the rest
+        run: python3 scripts/build.py
       - uses: actions/upload-artifact@v4
         with:
           name: catalog

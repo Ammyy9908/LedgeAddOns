@@ -7,11 +7,11 @@ It does not download music.
 ## Build this add-on
 
 Requires macOS 14+, Swift 6, and internet access to the public LedgeKit repository.
-Run from this folder, even if you copy it outside the Ledge checkout:
+Run from the repository root:
 
 ```sh
-swift test
-zsh Scripts/package.sh
+swift test --package-path add-ons/spotify-likes
+python3 scripts/package.py spotify-likes
 ```
 
 Output: `.build/addons/SpotifyLikes.ledgeaddon`. The binary targets your Mac's
@@ -38,7 +38,7 @@ Installing this package updates the existing spotify-likes add-on, if present.
 - Sources/SpotifyLikes contains the small SDK worker entry point.
 - Sources/SpotifyLikesCore contains Spotify request validation and library behavior.
 - Tests/SpotifyLikesTests exercises read, like, unlike, invalid input and failures.
-- Scripts/package.sh builds an installable folder without the parent repository.
+- The repository's scripts/package.py builds an installable folder from it.
 
 LedgeKit reads one JSON request from stdin, calls SpotifyLibrary, and writes one
 response to stdout. SpotifyLibrary uses an injectable HTTP transport so tests run
