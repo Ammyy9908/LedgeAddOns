@@ -3,55 +3,44 @@ import Testing
 import LedgeKit
 import SpotifyLikesCore
 
-@Test func readsLikedState() async throws {
-    let library = SpotifyLibrary { http in
-        #expect(http.httpMethod == "GET")
-        #expect(http.url?.path == "/v1/me/library/contains")
-        #expect(URLComponents(url: http.url!, resolvingAgainstBaseURL: false)?.queryItems?.first?.value == "spotify:track:abc123")
-        #expect(http.value(forHTTPHeaderField: "Authorization") == "Bearer fixture")
-        return (Data("[true]".utf8), HTTPURLResponse(url: http.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!)
-    }
-    let response = try await library.handle(.init(operation: "read", trackID: "abc123", liked: nil, accessToken: "fixture"))
-    #expect(response.value == true)
+private actor Calls {
+    var all: [String] = []
+    func add(_ call: String) { all.append(call) }
 }
 
-@Test func likesAndUnlikes() async throws {
+@Test func readsLikedStateThroughLedge() async throws {
+    let calls = Calls()
+    let library = SpotifyLibrary { method, path, query in
+        await calls.add("\(method) \(path) \(query["uris"] ?? "")")
+        return HostResponse(status: 200, body: .array([.bool(true)]))
+    }
+    #expect(try await library.isLiked("abc123"))
+    #expect(await calls.all == ["GET /v1/me/library/contains spotify:track:abc123"])
+}
+
+@Test func likesAndUnlikesThroughLedge() async throws {
     for liked in [true, false] {
-        let library = SpotifyLibrary { http in
-            #expect(http.httpMethod == (liked ? "PUT" : "DELETE"))
-            #expect(http.url?.path == "/v1/me/library")
-            #expect(http.httpBody == nil)
-            return (Data(), HTTPURLResponse(url: http.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!)
+        let calls = Calls()
+        let library = SpotifyLibrary { method, path, _ in
+            await calls.add("\(method) \(path)")
+            return HostResponse(status: 200, body: nil)
         }
-        let response = try await library.handle(.init(operation: "write", trackID: "abc123", liked: liked, accessToken: "fixture"))
-        #expect(response.value == liked)
+        #expect(try await library.setLiked(liked, trackID: "abc123") == liked)
+        #expect(await calls.all == ["\(liked ? "PUT" : "DELETE") /v1/me/library"])
     }
 }
 
-@Test func rejectsInvalidInputBeforeNetworking() async {
-    let library = SpotifyLibrary { _ in
-        Issue.record("Invalid request reached network")
-        throw SpotifyLibrary.Failure.invalidRequest
-    }
-    for request in [
-        AddOnRequest(operation: "read", trackID: "١", liked: nil, accessToken: "fixture"),
-        AddOnRequest(operation: "write", trackID: "abc", liked: nil, accessToken: "fixture"),
-        AddOnRequest(operation: "read", trackID: "abc", liked: nil, accessToken: ""),
-        AddOnRequest(operation: "delete", trackID: "abc", liked: nil, accessToken: "fixture")
-    ] {
-        do { _ = try await library.handle(request); Issue.record("Expected rejection") }
-        catch {}
-    }
-}
+@Test func refusalsAndBadInputBecomeReadableErrors() async {
+    let notConnected = SpotifyLibrary { _, _, _ in throw LedgeHostError("Spotify isn't connected.") }
+    do {
+        _ = try await notConnected.isLiked("abc123")
+        Issue.record("Expected a refusal")
+    } catch let error as AddOnError {
+        #expect(error.message == "Spotify isn't connected.")
+    } catch { Issue.record("Unexpected \(error)") }
 
-@Test func rejectsProviderFailuresAndMalformedResponses() async {
-    for (status, body) in [(401, "{}"), (403, "{}"), (429, "{}"), (200, "[]"), (200, "[true,false]"), (200, "{}")] {
-        let library = SpotifyLibrary { http in
-            (Data(body.utf8), HTTPURLResponse(url: http.url!, statusCode: status, httpVersion: nil, headerFields: nil)!)
-        }
-        do {
-            _ = try await library.handle(.init(operation: "read", trackID: "abc", liked: nil, accessToken: "fixture"))
-            Issue.record("Expected provider failure")
-        } catch {}
-    }
+    let rejected = SpotifyLibrary { _, _, _ in HostResponse(status: 401, body: nil) }
+    await #expect(throws: AddOnError.self) { _ = try await rejected.isLiked("abc123") }
+    let never = SpotifyLibrary { _, _, _ in Issue.record("Bad input reached Ledge"); return HostResponse(status: 200, body: nil) }
+    await #expect(throws: AddOnError.self) { _ = try await never.isLiked("../../me") }
 }

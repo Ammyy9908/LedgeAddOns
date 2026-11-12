@@ -1,7 +1,7 @@
 {
   "id": "spotify-likes",
-  "version": "1.0.0",
-  "protocolVersion": 1,
+  "version": "2.0.0",
+  "protocolVersion": 2,
   "name": "Spotify Likes",
   "summary": "Like Spotify songs from your Ledge player",
   "description": "Like or unlike the current Spotify song from Ledge.",
@@ -10,5 +10,15 @@
     "spotify-library"
   ],
   "executable": "SpotifyLikes",
-  "icon": "Assets/Icon.png"
+  "icon": "Assets/Icon.png",
+  "kit": {
+    "minAPI": "0.6.0"
+  },
+  "category": "Media",
+  "creator": {
+    "name": "Ledge"
+  },
+  "source": {
+    "repository": "https://github.com/Ammyy9908/LedgeAddOns/tree/main/add-ons/spotify-likes"
+  }
 }
