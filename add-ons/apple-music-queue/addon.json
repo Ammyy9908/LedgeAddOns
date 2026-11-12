@@ -1,15 +1,30 @@
 {
   "id": "apple-music-queue",
-  "version": "0.3.1",
-  "protocolVersion": 1,
+  "version": "0.4.0",
+  "protocolVersion": 2,
   "name": "Apple Music Controls",
-  "summary": "Favorites, playlists, shuffle, repeat and Playing Next",
-  "description": "Favorite or unfavorite songs, add the current song to your playlists, and view or reorder Apple Music\u2019s actual Playing Next queue. Requires Music automation permission for library actions and an updated Ledge host. Queue access is experimental.",
+  "summary": "Favorites, playlists and Playing Next in your player",
+  "description": "Favorite or unfavorite the playing Apple Music song, add it to one of your playlists, and see or reorder Music’s own Playing Next, from Ledge’s players. Library actions need Automation access for Music, which macOS asks for once. Playing Next uses a private macOS interface and is experimental.",
   "author": "Ledge",
   "capabilities": [
     "apple-music-queue",
     "apple-music-controls"
   ],
-  "executable": "AppleMusicQueue",
-  "icon": "Assets/Icon.png"
+  "executable": "AppleMusicControls",
+  "icon": "Assets/Icon.png",
+  "surfaces": [
+    "settings-page",
+    "player-action",
+    "player"
+  ],
+  "kit": {
+    "minAPI": "0.8.0"
+  },
+  "category": "Media",
+  "creator": {
+    "name": "Ledge"
+  },
+  "source": {
+    "repository": "https://github.com/Ammyy9908/LedgeAddOns/tree/main/add-ons/apple-music-queue"
+  }
 }

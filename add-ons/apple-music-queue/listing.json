@@ -1,9 +1,11 @@
 {
   "developer": "Ledge",
   "category": "Music",
-  "availability": "Free developer preview · requires Apple Music Controls-enabled Ledge",
-  "description": "Adds Apple Music controls to Ledge's player and lock screen: favorite or unfavorite the current song, add it to one of your playlists, toggle shuffle and repeat, and see Apple Music's actual Playing Next queue. Click Play Next on an upcoming song to move it right after the current one. Library actions need Automation permission for Music, which macOS asks for the first time you use them. Turn queue, favorites and playlists on or off separately in the add-on's settings. Removing the add-on removes these controls; playback, seeking and output selection stay in Ledge. Queue access uses private macOS APIs and is experimental; it only works with Apple Music and shows up to 12 upcoming songs. Requires the updated Ledge host with apple-music-queue support; older hosts cannot install this package.",
+  "availability": "Free developer preview · needs Ledge with LedgeKit 0.8.0",
+  "description": "Adds Apple Music to Ledge's players and lock screen: favorite or unfavorite the playing song, add it to one of your playlists, and see Apple Music's actual Playing Next. Click an upcoming song to play it next. Library actions need Automation access for Music, which macOS asks for the first time you use them. Turn Playing Next, the star and Add to Playlist on or off on the add-on's settings page. Playing Next uses a private macOS interface and is experimental; it works only with Apple Music and shows up to 12 upcoming songs.",
   "feedbackURL": "https://github.com/Ammyy9908/LedgeAddOns/issues/new",
-  "screenshots": ["Store/Screenshot.png"],
+  "screenshots": [
+    "Store/Screenshot.png"
+  ],
   "motionDemo": "Store/Demo.mp4"
 }
