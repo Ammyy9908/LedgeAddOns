@@ -1,12 +1,12 @@
+import Foundation
 import LedgeKit
 import SpotifyLikesCore
 
+// A long-lived session. Ledge's player sends `read` and `write`; the library asks Ledge's account broker, which
+// holds the Spotify sign-in. No token ever reaches this program.
 @main
 struct SpotifyLikesMain {
     static func main() async {
-        let library = SpotifyLibrary()
-        await AddOnWorker.run { request in
-            try await library.handle(request)
-        }
+        exit(await AddOnSession.run(id: "spotify-likes", handlers: SpotifyLibrary().handlers()))
     }
 }

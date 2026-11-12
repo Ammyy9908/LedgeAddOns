@@ -35,14 +35,15 @@ Installing this package updates the existing spotify-likes add-on, if present.
 - Package.swift pins the remote SDK. No Ledge application source is imported.
 - addon.json defines identity, descriptions, capability, executable and icon.
 - Assets/Icon.png supplies the package logo.
-- Sources/SpotifyLikes contains the small SDK worker entry point.
+- Sources/SpotifyLikes starts the session (`AddOnSession.run`).
 - Sources/SpotifyLikesCore contains Spotify request validation and library behavior.
 - Tests/SpotifyLikesTests exercises read, like, unlike, invalid input and failures.
 - The repository's scripts/package.py builds an installable folder from it.
 
-LedgeKit reads one JSON request from stdin, calls SpotifyLibrary, and writes one
-response to stdout. SpotifyLibrary uses an injectable HTTP transport so tests run
-without tokens or live account changes. Exceptions are redacted by the SDK worker.
+Since 2.0 the add-on runs as a long-lived session. Ledge's player sends `read` and `write`; SpotifyLibrary asks
+Ledge's account broker to call Spotify (`LedgeHost.request`), and Ledge adds the user's credentials itself. The
+add-on never receives a token. SpotifyLibrary takes the request function as a parameter, so tests run without an
+account. Errors other than Ledge's own reasons reach Ledge as a generic failure.
 
 ## Spotify API
 
@@ -55,11 +56,9 @@ response. Failed requests never report a successful like.
 
 ## Current limits
 
-Ledge's current host explicitly recognizes the spotify-likes ID and SpotifyLikes
-executable. Keep these names until generic add-on registration ships. The host
-owns settings and heart rendering; this SDK version cannot register arbitrary UI.
+Ledge's Spotify Likes adapter owns the settings page, the Spotify sign-in and the heart in the player. The broker
+allows only the library's contains, save and remove endpoints for `spotify-library`; anything else is refused.
 
-This package executes trusted native code with user privileges, without a sandbox.
-Ledge supplies a short-lived access token through stdin. Store publishing,
-notarized distribution and automatic updates remain future work. Automated tests
-do not establish successful live OAuth or account mutation.
+This package executes trusted native code with user privileges, without a sandbox. It needs Ledge with LedgeKit
+0.6.0; version 1.0 received a short-lived token instead and still works on older Ledge builds. Automated tests use a
+stand-in for Ledge and don't establish a live Spotify sign-in.
