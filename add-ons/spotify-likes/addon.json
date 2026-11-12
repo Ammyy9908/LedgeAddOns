@@ -1,18 +1,22 @@
 {
   "id": "spotify-likes",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "protocolVersion": 2,
   "name": "Spotify Likes",
   "summary": "Like Spotify songs from your Ledge player",
-  "description": "Like or unlike the current Spotify song from Ledge.",
+  "description": "Like or unlike the current Spotify song with the heart in Ledge’s players. Sign in to Spotify on the add-on’s settings page; Ledge keeps the sign-in.",
   "author": "Ledge",
   "capabilities": [
     "spotify-library"
   ],
   "executable": "SpotifyLikes",
   "icon": "Assets/Icon.png",
+  "surfaces": [
+    "settings-page",
+    "player-action"
+  ],
   "kit": {
-    "minAPI": "0.6.0"
+    "minAPI": "0.7.0"
   },
   "category": "Media",
   "creator": {

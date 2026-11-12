@@ -38,9 +38,32 @@ public struct SpotifyLibrary: Sendable {
         return liked
     }
 
-    /// The session's handlers: `read` and `write`, as Ledge's player asks them.
+    /// The heart in Ledge's players while Spotify plays.
+    public static let heart = PlayerAction("like", label: "Like", symbol: "heart", selectedSymbol: "heart.fill",
+                                           sources: ["com.spotify.client"])
+
+    /// The add-on's settings page: Ledge's Spotify sign-in, which stays in Ledge, and what the heart does.
+    public static let page = SettingsPage([
+        SettingsSection("account", title: "Spotify Account",
+                        footer: "Signed in, the heart in Ledge’s players adds Spotify songs to Liked Songs or takes them out. Ledge keeps the sign-in in your Keychain; this add-on never sees it.",
+                        rows: [.account("spotify", "Spotify", provider: "spotify")])
+    ])
+
+    /// The session's handlers: the heart as a player action, plus `read` and `write` for Ledge builds from before
+    /// player actions.
     public func handlers() -> AddOnHandlers {
         var handlers = AddOnHandlers()
+        handlers.activate = {
+            AddOnSession.show(Self.page)
+            AddOnSession.show(playerActions: [Self.heart])
+        }
+        handlers.onPlayerAction = { request in
+            guard request.action == Self.heart.id, request.track.source == "com.spotify.client" else { return nil }
+            // Local files and ads have no track id; there's nothing to like.
+            guard let trackID = request.track.id else { return nil }
+            if let liked = request.set { return try await setLiked(liked, trackID: trackID) }
+            return try await isLiked(trackID)
+        }
         handlers.on("read") { (request: LikeRequest) in try await isLiked(request.trackID) }
         handlers.on("write") { (request: LikeRequest) in
             guard let liked = request.liked else { throw AddOnError("Say whether to like or unlike the song.") }

@@ -2,6 +2,12 @@
 
 Newest version first. Every new `version` in addon.json needs an entry here.
 
+## 2.1.0
+
+- The heart is now the add-on's own: it describes it as a player action, and Ledge draws it in the notch, menu bar,
+  floating and lock screen players.
+- Its settings page comes from the add-on, with Ledge's Spotify sign-in on it. Needs a Ledge with LedgeKit 0.7.0.
+
 ## 2.0.0
 
 - Never receives a Spotify token. Ledge keeps the sign-in and calls Spotify's Liked Songs endpoints for the add-on
