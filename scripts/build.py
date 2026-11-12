@@ -20,9 +20,7 @@ base = f"https://github.com/Ammyy9908/LedgeAddOns/releases/download/catalog-{com
 decisions, published = validate.plan()
 published_entries = {entry["id"]: entry for entry in (published or {}).get("entries", [])}
 entries = []
-# Add-ons whose host loads a native module rather than running the executable target.
 # Apple Music Controls ships its QueueBridge dynamic library under the manifest's executable name.
-packaged_binaries = {"apple-music-queue": "libQueueBridge.dylib"}
 
 
 def record(destination):
@@ -71,7 +69,7 @@ for addon_id, decision in decisions.items():
                    "--arch", "arm64", "--arch", "x86_64"]
         subprocess.run(command, check=True)
         binary_dir = pathlib.Path(subprocess.check_output(command + ["--show-bin-path"], text=True).strip())
-        sources = {"executable": binary_dir / packaged_binaries.get(addon_id, executable),
+        sources = {"executable": binary_dir / executable,
                    "manifest": package / "addon.json", "icon": package / "Assets/Icon.png"}
         for key, name in names.items():
             destination = dist / name

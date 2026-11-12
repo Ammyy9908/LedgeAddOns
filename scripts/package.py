@@ -13,8 +13,6 @@ if len(sys.argv) < 2:
 package = root / "add-ons" / sys.argv[1]
 manifest = json.loads((package / "addon.json").read_text())
 output = pathlib.Path(sys.argv[2]).resolve() if len(sys.argv) > 2 else package / ".build" / "addons"
-# Add-ons whose host loads a native module rather than running the executable target (see build.py).
-binaries = {"apple-music-queue": "libQueueBridge.dylib"}
 
 subprocess.run(["swift", "build", "--package-path", str(package), "-c", "release"], check=True)
 bin_dir = pathlib.Path(subprocess.check_output(
@@ -23,7 +21,7 @@ name = manifest["executable"]
 bundle = output / f"{name}.ledgeaddon"
 shutil.rmtree(bundle, ignore_errors=True)
 (bundle / "Assets").mkdir(parents=True)
-shutil.copyfile(bin_dir / binaries.get(manifest["id"], name), bundle / name)
+shutil.copyfile(bin_dir / name, bundle / name)
 (bundle / name).chmod(0o755)
 shutil.copyfile(package / "addon.json", bundle / "addon.json")
 shutil.copyfile(package / "Assets/Icon.png", bundle / "Assets/Icon.png")
