@@ -30,7 +30,7 @@ import LedgeKit
     }
     let replies = Replies()
     let session = Task {
-        await AddOnSession.run(id: "notifications", handlers: NotificationWorker.handlers(), input: input) { line in
+        await AddOnSession.run(id: "notifications", handlers: NotificationWorker.handlers(settings: .init(load: { nil }, save: { _ in })), input: input) { line in
             await replies.add(try! JSONDecoder().decode(SessionMessage.self, from: line.dropLast()))
         }
     }
@@ -38,6 +38,35 @@ import LedgeKit
     session.cancel()
     let expected = try JSONValue(encoding: NotificationBannerResponse(request: request))
     #expect(await replies.all.contains(.response(id: 2, result: expected, error: nil)))
+}
+
+@Test func messageTextShowsOnlyAfterTheUserTurnsItOn() async throws {
+    let saved = Replies()
+    let settings = NotificationWorker.Settings(load: { nil }, save: { value in await saved.add(.log(level: .info, message: "\(value)")) })
+    let banner = NotificationBannerRequest(title: "Calendar", body: "Your meeting starts soon.", showPreview: true)
+    let messages: [SessionMessage] = [
+        .hello(protocolVersion: 2, apiLevel: SessionProtocol.apiLevel, addOnID: "notifications", generation: 1),
+        .request(id: 1, method: SessionProtocol.Method.activate, params: .null),
+        .request(id: 2, method: "banner", params: try JSONValue(encoding: banner)),
+        .request(id: 3, method: Surface.eventMethod, params: try JSONValue(encoding:
+            SurfaceEvent(surface: Surface.settingsPage, control: "showMessageText", action: .toggled(true)))),
+        .request(id: 4, method: "banner", params: try JSONValue(encoding: banner))
+    ]
+    let input = AsyncThrowingStream<Data, Error> { continuation in
+        for message in messages { continuation.yield(try! JSONEncoder().encode(message)) }
+    }
+    let replies = Replies()
+    let session = Task {
+        await AddOnSession.run(id: "notifications", handlers: NotificationWorker.handlers(settings: settings), input: input) { line in
+            await replies.add(try! JSONDecoder().decode(SessionMessage.self, from: line.dropLast()))
+        }
+    }
+    for _ in 0..<100 where await replies.all.count < 5 { try await Task.sleep(nanoseconds: 10_000_000) }
+    session.cancel()
+    #expect(await replies.all.contains(.response(id: 2, result: .object(["text": .string("Calendar: New notification")]), error: nil)))
+    #expect(await replies.all.contains(.response(id: 4, result: .object(["text": .string("Calendar: Your meeting starts soon.")]), error: nil)))
+    #expect(await saved.all == [.log(level: .info, message: "true")])
+    try NotificationWorker.page(showsText: true).validate()
 }
 
 private actor Replies {
