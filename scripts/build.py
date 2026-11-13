@@ -100,7 +100,9 @@ for addon_id, decision in decisions.items():
             return {"url": base + name, "sha256": hashlib.sha256(data).hexdigest()}
         assert 1 <= len(listing["screenshots"]) <= 8, "At least one screenshot is required"
         listing["screenshots"] = [publish_media(path, ".png", 8 * 1024 * 1024) for path in listing["screenshots"]]
-        listing["motionDemo"] = publish_media(listing["motionDemo"], ".mp4", 32 * 1024 * 1024)
+        # The motion demo is optional: Ledge's Store shows a missing-preview state without one.
+        if "motionDemo" in listing:
+            listing["motionDemo"] = publish_media(listing["motionDemo"], ".mp4", 32 * 1024 * 1024)
     # Capabilities are open: validate.py checked the names, and Ledge grants only those it supports.
     entries.append({"id": addon_id, "name": manifest["name"], "summary": manifest["summary"],
                     "version": manifest["version"], "architectures": ["arm64", "x86_64"],

@@ -15,8 +15,8 @@ remain in `addon.json`; store presentation belongs here:
 }
 ```
 
-Include 1–8 PNG screenshots (8 MB each maximum, up to 4096 pixels per side) and
-an MP4 motion demo (32 MB maximum). Use real product captures or clearly labeled
+Include 1–8 PNG screenshots (8 MB each maximum, up to 4096 pixels per side) and,
+optionally, an MP4 motion demo (32 MB maximum). Use real product captures or clearly labeled
 demos without private account content. The publisher converts local paths into
 release URLs and SHA-256 hashes. The host verifies media before displaying it;
 videos require user playback. Feedback opens the developer’s HTTPS destination
