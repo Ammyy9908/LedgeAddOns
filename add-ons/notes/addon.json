@@ -1,0 +1,20 @@
+{
+    "id": "notes",
+    "version": "0.3.0",
+    "protocolVersion": 2,
+    "name": "Notes",
+    "summary": "Write notes in the notch",
+    "description": "A page of its own in the open notch: your notes in a list, and a Markdown editor to write them, saved as you type. Notes are Markdown files on this Mac, and a deleted one goes to the Trash.",
+    "author": "Sumit",
+    "capabilities": ["clipboard-write"],
+    "surfaces": [
+        "notch-page",
+        "settings-page"
+    ],
+    "kit": {
+        "minAPI": "0.13.0"
+    },
+    "executable": "Notes",
+    "icon": "Assets/Icon.png",
+    "category": "Productivity"
+}
