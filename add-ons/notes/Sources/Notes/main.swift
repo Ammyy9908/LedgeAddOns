@@ -15,6 +15,8 @@ actor Notes {
     /// A note made with New that hasn't been written in yet. It isn't saved until it has words in it.
     private var draft: String?
     private var problem: String?
+    /// A moment's word in the note's header, like "Copied". Gone at the next thing the person does.
+    private var notice: String?
 
     func start() async {
         do {
@@ -45,6 +47,7 @@ actor Notes {
             return
         }
         guard event.surface == Surface.notchPage else { return }
+        notice = nil
         switch (event.control, event.action) {
         case ("notes", .pressed):
             discardEmptyDraft()
@@ -64,8 +67,14 @@ actor Notes {
             guard let id = Note.id(fromScreen: event.screen) else { return }
             write(text, to: id)
         case ("copy", .pressed):
-            if let note = current { try? await LedgeHost.copy(note.text) }
-            return
+            guard let note = current else { return }
+            do {
+                try await LedgeHost.copy(note.text)
+                notice = "Copied"
+            } catch {
+                // The person can turn copying off in Ledge; say so rather than do nothing.
+                notice = "Copying is off in Ledge"
+            }
         case ("delete", .pressed):
             if let id = open {
                 do { try store.trash(id) } catch { AddOnSession.log("Couldn't move a note to the Trash: \(error)", level: .error) }
@@ -146,7 +155,7 @@ actor Notes {
 
     private func screen() -> PageScreen {
         if let note = current {
-            return PageScreen("note-\(note.id)", depth: 1, caption: problem ?? "Edited \(Note.when(note.modified))", back: true,
+            return PageScreen("note-\(note.id)", depth: 1, caption: problem ?? notice ?? "Edited \(Note.when(note.modified))", back: true,
                               actions: [PageAction("copy", symbol: "doc.on.doc", label: "Copy note"),
                                         PageAction("delete", symbol: "trash", label: "Move to Trash", destructive: true)],
                               content: .editor(id: "body", text: note.text, placeholder: "Start writing",
