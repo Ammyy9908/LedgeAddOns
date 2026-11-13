@@ -2,6 +2,12 @@
 
 Newest version first. Every new `version` in addon.json needs an entry here.
 
+## 0.4.0
+
+- Copy says so: "Copied" in the note's header when it worked, and "Copying is off in Ledge" when copying is turned off
+  for Notes, instead of nothing happening.
+- Built with LedgeKit 0.15.2. It still runs in every Ledge with LedgeKit 0.13.0 or later.
+
 ## 0.3.0
 
 - First release in the Store.
