@@ -1,0 +1,8 @@
+{
+  "developer": "Sumit",
+  "category": "Productivity",
+  "availability": "Free · needs a Ledge with LedgeKit 0.13 · macOS 14 or later",
+  "description": "Notes gives you a page of your own in the open notch: your notes in a list, and a Markdown editor to write them, saved as you type. Headings, bold, italic, lists and checklists are styled as you write, and a click ticks a checkbox. Notes are plain Markdown files that stay on this Mac, in the folder Ledge keeps for the add-on; a deleted note goes to the Trash. Copy puts a note on your clipboard. Notes doesn't sync, search inside notes or read Apple Notes. Screenshots show sample notes.",
+  "feedbackURL": "https://github.com/Ammyy9908/LedgeAddOns/issues/new",
+  "screenshots": ["Store/List.png", "Store/Note.png"]
+}
