@@ -267,4 +267,29 @@ enum Scripts {
         return output as text
     end run
     """#
+
+
+    /// Opens an Apple song-store URL in Music and waits for the exact catalog title and artist to become current.
+    /// The URL and expected labels are arguments, never interpolated into script source.
+    static let playCatalogSong = #"""
+    on run argv
+        set targetURL to item 1 of argv
+        set targetTitle to item 2 of argv
+        set targetArtist to item 3 of argv
+        tell application "Music" to open location targetURL
+        repeat 20 times
+            delay 0.25
+            try
+                tell application "Music"
+                    set t to current track
+                    if (name of t is targetTitle) and (artist of t is targetArtist) then
+                        if player state is not playing then play t
+                        if player state is playing then return "playing" & tab & (name of t) & tab & (artist of t) & tab & (player state as text)
+                    end if
+                end tell
+            end try
+        end repeat
+        return "unconfirmed"
+    end run
+    """#
 }

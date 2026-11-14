@@ -14,14 +14,19 @@ extension, and AI tools expose read-only lookup plus explicit playback and playl
 search text or playlist name, is passed as an argument, never written into a script.
 
 - Favourites and playlists are AppleScript. macOS asks once to let Ledge control Music.
-- `now_playing` reads the current song and player state. `search_songs` searches only the local Music library and
-  returns up to ten matches. `play_song` accepts an exact ID from that search, and does not search or play in one
-  step.
-- `list_playlists` returns editable, non-smart playlists. `add_song_to_playlist` accepts IDs returned by the
-  search and playlist tools. `create_playlist` creates an empty playlist. Ledge marks both playlist mutations for
-  approval before the add-on runs them.
-- The AI tools do not search the Apple Music catalog, retrieve personalized recommendations or query listening
-  history. Those require a separate MusicKit authorization flow; this add-on uses local AppleScript Automation.
+- `search_songs` queries Apple's public song-store search endpoint for the selected storefront and returns up
+  to ten catalog matches, including songs that are not in the local library. It returns catalog IDs separately from
+  Music's persistent library IDs. The storefront defaults to the Mac's region; pass a two-letter `storefront` to
+  search another country.
+- `play_song` accepts a catalog ID from the most recent `search_songs` call, opens Apple's returned song link
+  in Music, and reports success only after Music shows that exact title and artist playing. The person must have
+  Music signed in and the selected result available in that storefront.
+- `search_library` remains available for songs already in the local library. Use its IDs with
+  `add_song_to_playlist`; `list_playlists` and `list_playlist_songs` provide the playlist IDs and contents.
+  `create_playlist` makes an empty playlist. Ledge asks before playlist mutations.
+- Catalog search uses Apple's public iTunes Search API for metadata and Music store links; playback is handed to the
+  Music app. It does not retrieve personalized recommendations or listening history, which require a separate
+  MusicKit authorization flow.
 - Playing Next uses MediaRemote's `MRNowPlayingController`, a private interface macOS answers only for its own
   programs (others get error 3). `osascript` is one, so the queue program is JavaScript for Automation run by it.
   It asks for 20 items, checks that Music is the source, finds the playing song by the id in the same answer and

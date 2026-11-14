@@ -2,6 +2,13 @@
 
 Newest version first. Every new `version` in addon.json needs an entry here.
 
+## 0.7.0
+
+- Searches Apple's storefront song catalog instead of limiting `search_songs` to tracks already in the local library.
+- Plays a selected catalog result by opening its Apple song link in Music and confirming the requested title and artist are playing.
+- Keeps local-library search separate as `search_library` for playlist edits; adds `play_library_song` for local-only playback.
+- Documents storefront selection and the Music sign-in/availability requirement.
+
 ## 0.6.0
 
 - Adds `list_playlist_songs` AI tool: returns up to 50 songs in a playlist with IDs, titles, artists and albums.

@@ -42,25 +42,32 @@ public struct AppleMusic: Sendable {
     public static let playlistMenu = PlayerMenu("playlists", title: "Add to Playlist", symbol: "text.badge.plus")
 
 
-    /// AI tools exposed by Ledge to connected assistants. Search returns local-library IDs; mutations require a
-    /// separate call using those IDs so the assistant can present the exact selection first.
+    /// AI tools exposed by Ledge to connected assistants. Catalog playback and local-library playlist operations
+    /// use different IDs and separate calls so the assistant can present the exact selection first.
     public static let tools: [AddOnTool] = [
         AddOnTool("now_playing", title: "Get the Apple Music song playing now",
                   summary: "Returns the current Apple Music song, album, artist, favorite state, player state and position. It does not change playback."),
-        AddOnTool("search_songs", title: "Search the Apple Music library",
-                  summary: "Searches songs in the user's local Apple Music library and returns up to ten matches with stable IDs. It does not play anything. Choose a result before calling play_song.",
+        AddOnTool("search_songs", title: "Search the Apple Music catalog",
+                  summary: "Searches Apple's song catalog, including songs that are not in the user's library. Returns up to ten matches. It does not start playback. Choose a result before calling play_song.",
+                  arguments: [.init("query", summary: "A song title, artist or album to search for.", kind: .text(maximumLength: 300)),
+                              .init("storefront", summary: "Optional two-letter Apple Music country/storefront code, such as us or in. Defaults to this Mac's region.", kind: .text(maximumLength: 2), required: false)]),
+        AddOnTool("play_song", title: "Play an Apple Music catalog song",
+                  summary: "Opens the selected Apple Music catalog result in Music and starts it if Music confirms the requested song. Use an exact catalog_id from search_songs and only when the user asked to play music.",
+                  arguments: [.init("catalog_id", summary: "Exact catalog ID from search_songs.", kind: .text(maximumLength: 20))]),
+        AddOnTool("search_library", title: "Search songs in the Apple Music library",
+                  summary: "Searches songs already in the user's local Music library. Use this for playlist edits; it does not search the Apple Music catalog.",
                   arguments: [.init("query", summary: "A song title, artist or album to search for.", kind: .text(maximumLength: 300))]),
-        AddOnTool("play_song", title: "Play an Apple Music library song",
-                  summary: "Starts the selected library song and replaces current playback. Use only after search_songs and when the user asked to play music.",
-                  arguments: [.init("track_id", summary: "Exact persistent ID from search_songs.", kind: .text(maximumLength: 16))]),
+        AddOnTool("play_library_song", title: "Play an Apple Music library song",
+                  summary: "Starts the selected song already in the local library. Use an exact track_id from search_library and only when the user asked to play music.",
+                  arguments: [.init("track_id", summary: "Exact persistent library ID from search_library.", kind: .text(maximumLength: 16))]),
         AddOnTool("list_playlists", title: "List Apple Music playlists",
                   summary: "Lists the user's editable, non-smart playlists with IDs and names. It does not change the library."),
         AddOnTool("list_playlist_songs", title: "List songs in an Apple Music playlist",
                   summary: "Returns up to 50 songs in a playlist with their IDs, titles, artists and albums. Use an ID returned by list_playlists.",
                   arguments: [.init("playlist_id", summary: "Exact persistent ID from list_playlists.", kind: .text(maximumLength: 16))]),
         AddOnTool("add_song_to_playlist", title: "Add a song to an Apple Music playlist",
-                  summary: "Adds one selected library song to one selected playlist. Use IDs returned by search_songs and list_playlists; make the intended song and playlist clear before calling.",
-                  arguments: [.init("track_id", summary: "Exact persistent ID from search_songs.", kind: .text(maximumLength: 16)),
+                  summary: "Adds one selected library song to one selected playlist. Use a track_id from search_library and a playlist_id from list_playlists; make the intended song and playlist clear before calling.",
+                  arguments: [.init("track_id", summary: "Exact persistent ID from search_library.", kind: .text(maximumLength: 16)),
                               .init("playlist_id", summary: "Exact persistent ID from list_playlists.", kind: .text(maximumLength: 16))], destructive: true),
         AddOnTool("create_playlist", title: "Create an Apple Music playlist",
                   summary: "Creates an empty playlist in the user's Apple Music library. Ask before creating it and use the requested name.",
@@ -130,11 +137,11 @@ public struct AppleMusic: Sendable {
             guard request.track.source == Self.music, await state.choices.queue else { throw AddOnError("Playing Next is turned off.") }
             return try await queue(playNext: request.playNext)
         }
-        handlers.onTool = { [self] call in try await tool(call) }
+        handlers.onTool = { [self] call in try await tool(call, state: state) }
         return handlers
     }
 
-    private func tool(_ call: ToolCall) async throws -> ToolResult {
+    private func tool(_ call: ToolCall, state: State) async throws -> ToolResult {
         guard let definition = Self.tools.first(where: { $0.name == call.tool }) else {
             throw AddOnError("Unknown Apple Music tool.")
         }
@@ -156,6 +163,34 @@ public struct AppleMusic: Sendable {
             guard let query = call.text("query")?.trimmingCharacters(in: .whitespacesAndNewlines), !query.isEmpty else {
                 throw AddOnError("Enter a song title, artist or album to search.")
             }
+            let storefront = try AppleMusicCatalog.storefront(call.text("storefront"))
+            let found = try await AppleMusicCatalog.search(String(query.prefix(300)), storefront: storefront)
+            await state.remember(found)
+            return .json(.object(["songs": .array(found.map { song in
+                .object(["catalog_id": .string(song.id), "title": .string(song.title),
+                         "artist": .string(song.artist), "album": .string(song.album),
+                         "storefront": .string(song.storefront)])
+            })]))
+        case "play_song":
+            guard let id = call.text("catalog_id"), id.count <= 20, id.allSatisfy(\.isNumber),
+                  let song = await state.catalogSong(id: id) else {
+                throw AddOnError("Use a catalog_id returned by a recent search_songs call.")
+            }
+            guard AppleMusicCatalog.isSafeMusicURL(song.viewURL) else {
+                throw AddOnError("That catalog result doesn't have a safe Apple Music link.")
+            }
+            let output = try await music(Scripts.playCatalogSong, [song.viewURL, song.title, song.artist])
+            let fields = output.trimmingCharacters(in: .whitespacesAndNewlines).components(separatedBy: "\t")
+            guard fields.count == 4, fields[0] == "playing" else {
+                throw AddOnError("Music didn't confirm playback of the selected catalog song. Check that you're signed in to Apple Music and that the song is available in the selected storefront.")
+            }
+            return .json(.object(["catalog_id": .string(song.id), "title": .string(song.title),
+                                  "artist": .string(song.artist), "album": .string(song.album),
+                                  "accepted": .bool(true), "playing_confirmed": .bool(true)]))
+        case "search_library":
+            guard let query = call.text("query")?.trimmingCharacters(in: .whitespacesAndNewlines), !query.isEmpty else {
+                throw AddOnError("Enter a song title, artist or album to search.")
+            }
             let output = try await music(Scripts.searchLibrary, [String(query.prefix(300))])
             let songs = output.split(separator: "\n").prefix(10).compactMap { line -> JSONValue? in
                 let fields = line.split(separator: "\t", omittingEmptySubsequences: false).map(String.init)
@@ -164,13 +199,13 @@ public struct AppleMusic: Sendable {
                                 "artist": .string(String(fields[2].prefix(512))), "album": .string(String(fields[3].prefix(512)))])
             }
             return .json(.object(["songs": .array(songs)]))
-        case "play_song":
+        case "play_library_song":
             guard let id = call.text("track_id"), Self.isPersistentID(id) else {
-                throw AddOnError("Use a song ID returned by search_songs.")
+                throw AddOnError("Use a library track ID returned by search_library.")
             }
             let fields = try await music(Scripts.playSong, [id]).trimmingCharacters(in: .whitespacesAndNewlines)
                 .components(separatedBy: "\t")
-            guard fields.count == 3 else { throw AddOnError("Music didn't confirm the selected song.") }
+            guard fields.count == 3 else { throw AddOnError("Music didn't confirm the selected library song.") }
             return .json(.object(["id": .string(fields[0]), "title": .string(fields[1]), "artist": .string(fields[2]),
                                   "accepted": .bool(true)]))
         case "list_playlists":
@@ -191,7 +226,7 @@ public struct AppleMusic: Sendable {
         case "add_song_to_playlist":
             guard let trackID = call.text("track_id"), Self.isPersistentID(trackID),
                   let playlistID = call.text("playlist_id"), Self.isPersistentID(playlistID) else {
-                throw AddOnError("Use a song ID from search_songs and a playlist ID from list_playlists.")
+                throw AddOnError("Use a song ID from search_library and a playlist ID from list_playlists.")
             }
             _ = try await music(Scripts.addSongToPlaylist, [trackID, playlistID])
             return .text("Apple Music added the selected song to the selected playlist.")
@@ -287,7 +322,13 @@ public struct AppleMusic: Sendable {
 /// The user's choices, as the session last saw them.
 private actor State {
     private(set) var choices = AppleMusic.Choices()
+    private var catalogSongs: [String: AppleMusicCatalogSong] = [:]
+
     func set(_ choices: AppleMusic.Choices) { self.choices = choices }
+    func remember(_ songs: [AppleMusicCatalogSong]) {
+        catalogSongs = Dictionary(songs.map { ($0.id, $0) }, uniquingKeysWith: { _, newest in newest })
+    }
+    func catalogSong(id: String) -> AppleMusicCatalogSong? { catalogSongs[id] }
 }
 
 /// Runs `/usr/bin/osascript` with a fixed program and arguments, with a deadline and an output limit.
