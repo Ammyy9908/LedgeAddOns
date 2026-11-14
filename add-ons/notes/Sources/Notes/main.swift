@@ -29,6 +29,53 @@ actor Notes {
         reload()
         AddOnSession.show(settingsPage())
         show()
+        AddOnSession.show(tools: Self.tools)
+    }
+
+    // MARK: Tools for AI apps
+
+    static let tools = [
+        AddOnTool("search_notes", title: "Search notes",
+                  summary: "Finds notes containing every word of the query, newest first, and returns each note's id, title, preview and when it was edited. An empty query lists the latest notes.",
+                  arguments: [.init("query", summary: "Words to look for.", kind: .text(maximumLength: 200), required: false)]),
+        AddOnTool("read_note", title: "Read a note", summary: "Returns a note's full Markdown text, by the id search_notes gave.",
+                  arguments: [.init("id", summary: "The note's id, from search_notes.", kind: .text(maximumLength: 64))]),
+        AddOnTool("add_note", title: "Add a note", summary: "Adds a new note with the given Markdown text and returns its id and title.",
+                  arguments: [.init("text", summary: "The note, in Markdown. Its first line is its title.", kind: .text(maximumLength: 20_000))]),
+    ]
+
+    func tool(_ call: ToolCall) throws -> ToolResult {
+        reload()
+        switch call.tool {
+        case "search_notes":
+            let found = Note.search(notes.filter { !$0.isBlank }, for: call.text("query") ?? "")
+            let iso = ISO8601DateFormatter()
+            return .json(.array(found.map { note in
+                .object(["id": .string(note.id), "title": .string(note.title), "preview": note.preview.map(JSONValue.string) ?? .null,
+                         "edited": .string(iso.string(from: note.modified))])
+            }))
+        case "read_note":
+            // Only a note that exists: the id becomes a file name, and it came from an AI app.
+            guard let id = call.text("id"), let note = notes.first(where: { $0.id == id }) else {
+                throw AddOnError("There's no note with that id. Use search_notes to find one.")
+            }
+            return .text(String(note.text.prefix(60_000)))
+        case "add_note":
+            guard let text = call.text("text"), !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                throw AddOnError("Give the note some text.")
+            }
+            let note = Note(id: Note.newID(), text: text, modified: Date())
+            do { try store.save(note) } catch {
+                AddOnSession.log("Save failed: \(error)", level: .error)
+                throw AddOnError("Notes couldn't save it.")
+            }
+            notes.insert(note, at: 0)
+            AddOnSession.show(settingsPage())
+            show()
+            return .json(.object(["id": .string(note.id), "title": .string(note.title)]))
+        default:
+            throw AddOnError("Notes has no tool named \(call.tool).")
+        }
     }
 
     // MARK: Events
@@ -195,4 +242,5 @@ var handlers = AddOnHandlers()
 handlers.activate = { await addOn.start() }
 handlers.onEvent = { event in await addOn.handle(event) }
 handlers.onVisibilityChange = { visibility in await addOn.visibilityChanged(visibility) }
+handlers.onTool = { call in try await addOn.tool(call) }
 exit(await AddOnSession.run(id: "notes", handlers: handlers))

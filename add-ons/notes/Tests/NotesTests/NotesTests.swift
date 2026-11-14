@@ -83,3 +83,13 @@ private func scratch() throws -> URL {
     #expect(FileManager.default.fileExists(atPath: old.path))                   // b.md is still there, so the folder stays
     #expect(store.moveNotes(from: root.appendingPathComponent("nowhere")) == 0)
 }
+
+@Test func searchFindsNotesWithEveryWordInAnyCase() {
+    let notes = [Note(id: "a", text: "# Shopping\nOat milk, bread", modified: Date()),
+                 Note(id: "b", text: "Milk the cow", modified: Date()),
+                 Note(id: "c", text: "Ideas", modified: Date())]
+    #expect(Note.search(notes, for: "MILK").map(\.id) == ["a", "b"])
+    #expect(Note.search(notes, for: "oat milk").map(\.id) == ["a"])
+    #expect(Note.search(notes, for: "").map(\.id) == ["a", "b", "c"])
+    #expect(Note.search(notes, for: "", limit: 1).map(\.id) == ["a"])
+}
