@@ -41,6 +41,15 @@ public struct Note: Sendable, Equatable {
     }
 
     /// A short id for a new note, which is also its file name.
+    /// Notes whose text has every word of the query in it, any case, newest first. An empty query matches all.
+    public static func search(_ notes: [Note], for query: String, limit: Int = 20) -> [Note] {
+        let words = query.lowercased().split(whereSeparator: \.isWhitespace).map(String.init)
+        return Array(notes.filter { note in
+            let text = note.text.lowercased()
+            return words.allSatisfy { text.contains($0) }
+        }.prefix(limit))
+    }
+
     public static func newID() -> String {
         String(UUID().uuidString.prefix(8)).lowercased()
     }

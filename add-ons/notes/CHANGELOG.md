@@ -2,6 +2,12 @@
 
 Newest version first. Every new `version` in addon.json needs an entry here.
 
+## 0.5.0
+
+- Tools for AI apps: Claude, Cursor or Codex can search your notes, read one, and add one, once you turn on AI apps
+  and Notes' tools in Ledge's Settings. Nothing can be changed or deleted this way.
+- Needs a Ledge with LedgeKit 0.16.0.
+
 ## 0.4.0
 
 - Copy says so: "Copied" in the note's header when it worked, and "Copying is off in Ledge" when copying is turned off
