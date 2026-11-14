@@ -1,0 +1,8 @@
+{
+  "developer": "Ledge",
+  "category": "Media",
+  "availability": "Free · needs a Ledge with LedgeKit 0.17 · macOS 14 or later",
+  "description": "Spotify Likes puts a heart beside the song that's playing in Ledge's players: in the notch, the menu bar, the floating player and on the lock screen. A click adds the song to your Liked Songs on Spotify, and another removes it. It works with your own Spotify developer app: its settings page shows the Redirect URI to register, then you sign in to Spotify in your browser. Ledge keeps the sign-in in the Keychain, and the add-on never sees your token. If you turn on AI apps in Ledge and allow this add-on's tools, apps like Claude or ChatGPT can search Spotify for songs, play one, list your Spotify Connect devices and move playback to another device. Playing and moving playback need Spotify Premium. Each part needs its own permission, and after updating you reconnect Spotify once to grant them. Spotify Likes doesn't download music, and it changes your library only when you click the heart.",
+  "feedbackURL": "https://github.com/Ammyy9908/LedgeAddOns/issues/new",
+  "screenshots": ["Store/Player.png"]
+}
