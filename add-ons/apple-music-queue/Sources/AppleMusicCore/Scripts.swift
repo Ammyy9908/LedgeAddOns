@@ -164,4 +164,80 @@ enum Scripts {
         return true
     end run
     """#
+
+    /// Current song details as bounded TSV: persistent ID, title, artist, album, favorite, state, position.
+    static let nowPlaying = #"""
+    on run
+        tell application "Music"
+            if player state is stopped then return ""
+            set t to current track
+            return (persistent ID of t) & tab & (name of t) & tab & (artist of t) & tab & (album of t) & tab & (favorited of t as text) & tab & (player state as text) & tab & (player position as text)
+        end tell
+    end run
+    """#
+
+    /// Searches the local library only. Results are bounded and IDs can be passed to playSong/addSongToPlaylist.
+    static let searchLibrary = #"""
+    on cleanText(value)
+        set AppleScript's text item delimiters to {tab, return, linefeed}
+        set parts to text items of (value as text)
+        set AppleScript's text item delimiters to " "
+        set resultText to parts as text
+        set AppleScript's text item delimiters to ""
+        return resultText
+    end cleanText
+    on run argv
+        set queryText to item 1 of argv
+        set output to {}
+        tell application "Music"
+            set foundTracks to search library playlist 1 for queryText only songs
+            repeat with t in foundTracks
+                if (count of output) is 10 then exit repeat
+                set end of output to (persistent ID of t) & tab & my cleanText(name of t) & tab & my cleanText(artist of t) & tab & my cleanText(album of t)
+            end repeat
+        end tell
+        set AppleScript's text item delimiters to linefeed
+        return output as text
+    end run
+    """#
+
+    /// Plays one library track selected by its persistent ID from searchLibrary.
+    static let playSong = #"""
+    on run argv
+        set wantedID to item 1 of argv
+        tell application "Music"
+            set matches to (every track of library playlist 1 whose persistent ID is wantedID)
+            if (count of matches) is not 1 then error "That song is no longer in your library. Search again."
+            play item 1 of matches
+            return (persistent ID of item 1 of matches) & tab & (name of item 1 of matches) & tab & (artist of item 1 of matches)
+        end tell
+    end run
+    """#
+
+    /// Adds the selected library track to a selected non-smart user playlist.
+    static let addSongToPlaylist = #"""
+    on run argv
+        set wantedTrack to item 1 of argv
+        set wantedPlaylist to item 2 of argv
+        tell application "Music"
+            set targetTracks to (every track of library playlist 1 whose persistent ID is wantedTrack)
+            set targetPlaylists to (every user playlist whose persistent ID is wantedPlaylist and smart is false)
+            if (count of targetTracks) is not 1 then error "That song is no longer in your library. Search again."
+            if (count of targetPlaylists) is not 1 then error "That playlist is no longer available. List playlists again."
+            duplicate item 1 of targetTracks to item 1 of targetPlaylists
+            return true
+        end tell
+    end run
+    """#
+
+    /// Creates a regular user playlist and returns its persistent ID and name.
+    static let createPlaylist = #"""
+    on run argv
+        set wantedName to item 1 of argv
+        tell application "Music"
+            set made to make new user playlist with properties {name:wantedName}
+            return (persistent ID of made) & tab & (name of made)
+        end tell
+    end run
+    """#
 }

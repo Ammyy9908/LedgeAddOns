@@ -2,6 +2,12 @@
 
 Newest version first. Every new `version` in addon.json needs an entry here.
 
+## 0.5.0
+
+- Adds AI tools to inspect the playing song, search the local library, play a selected result, list playlists, add a selected library song to a playlist, and create playlists.
+- Search and playback are separate; identifiers must come from the matching search/list tools. Playlist changes and creation are marked for confirmation.
+- Updates the LedgeKit requirement to 0.17.0 and lists the `ai-tool` surface.
+
 ## 0.4.0
 
 - Runs as one long-lived session, like other add-ons. The native module and Ledge's `perl` loader are gone:
