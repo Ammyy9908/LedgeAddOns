@@ -54,9 +54,11 @@ public struct SpotifyLibrary: Sendable {
     public func handlers() -> AddOnHandlers {
         var handlers = AddOnHandlers()
         handlers.activate = {
+            AddOnSession.show(tools: SpotifySongs.tools)
             AddOnSession.show(Self.page)
             AddOnSession.show(playerActions: [Self.heart])
         }
+        handlers.onTool = { try await SpotifySongs().call($0) }
         handlers.onPlayerAction = { request in
             guard request.action == Self.heart.id, request.track.source == "com.spotify.client" else { return nil }
             // Local files and ads have no track id; there's nothing to like.
