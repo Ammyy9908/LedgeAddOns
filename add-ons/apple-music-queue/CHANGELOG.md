@@ -2,6 +2,10 @@
 
 Newest version first. Every new `version` in addon.json needs an entry here.
 
+## 0.6.0
+
+- Adds `list_playlist_songs` AI tool: returns up to 50 songs in a playlist with IDs, titles, artists and albums.
+
 ## 0.5.0
 
 - Adds AI tools to inspect the playing song, search the local library, play a selected result, list playlists, add a selected library song to a playlist, and create playlists.

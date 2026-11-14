@@ -240,4 +240,31 @@ enum Scripts {
         end tell
     end run
     """#
+
+    /// Lists songs in a playlist by its persistent ID. Returns up to 50 tracks as bounded TSV.
+    static let listPlaylistSongs = #"""
+    on cleanText(value)
+        set AppleScript's text item delimiters to {tab, return, linefeed}
+        set parts to text items of (value as text)
+        set AppleScript's text item delimiters to " "
+        set resultText to parts as text
+        set AppleScript's text item delimiters to ""
+        return resultText
+    end cleanText
+    on run argv
+        set wantedID to item 1 of argv
+        set output to {}
+        tell application "Music"
+            set targetPlaylists to (every user playlist whose persistent ID is wantedID)
+            if (count of targetPlaylists) is not 1 then error "That playlist is no longer available. List playlists again."
+            set targetPlaylist to item 1 of targetPlaylists
+            repeat with t in (every track of targetPlaylist)
+                if (count of output) is 50 then exit repeat
+                set end of output to (persistent ID of t) & tab & my cleanText(name of t) & tab & my cleanText(artist of t) & tab & my cleanText(album of t)
+            end repeat
+        end tell
+        set AppleScript's text item delimiters to linefeed
+        return output as text
+    end run
+    """#
 }
