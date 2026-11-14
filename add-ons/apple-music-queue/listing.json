@@ -2,7 +2,7 @@
   "developer": "Ledge",
   "category": "Music",
   "availability": "Free developer preview · needs Ledge with LedgeKit 0.17.0",
-  "description": "Adds Apple Music to Ledge's players and lock screen: favorite or unfavorite songs, add songs to playlists, and see or reorder Music's actual Playing Next. AI tools can search Apple's catalog for metadata, play songs already in the local library, inspect and manage playlists, control shuffle, list Playing Next, add a library song to play next, and favorite either the playing song or a library song. Catalog results are metadata only and cannot be played by this add-on. Music actions need macOS Automation access. Adding a library song to Playing Next may also need Accessibility access. Playing Next is experimental and shows up to 12 upcoming songs.",
+  "description": "Adds Apple Music to Ledge's players and lock screen: favorite or unfavorite songs, add songs to playlists, and see or reorder Music's actual Playing Next. AI tools can inspect and manage playlists, control shuffle, list Playing Next, add a library song to play next, and favorite either the playing song or a library song. Song search and direct playback are not exposed. Music actions need macOS Automation access. Adding a library song to Playing Next may also need Accessibility access. Playing Next is experimental and shows up to 12 upcoming songs.",
   "feedbackURL": "https://github.com/Ammyy9908/LedgeAddOns/issues/new",
   "screenshots": [
     "Store/Screenshot.png"

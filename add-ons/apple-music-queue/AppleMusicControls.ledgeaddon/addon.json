@@ -1,0 +1,31 @@
+{
+  "id": "apple-music-queue",
+  "version": "0.15.0",
+  "protocolVersion": 2,
+  "name": "Apple Music Controls",
+  "summary": "Apple Music player controls and AI tools",
+  "description": "Favorite or unfavorite Apple Music songs, add songs to playlists, and see or reorder Playing Next in Ledge’s players. AI tools can inspect the current song, manage playlists, control shuffle, list Playing Next, add a library song to play next, and favorite either the playing song or a library song. Song search and direct playback are not exposed. Music actions use macOS Automation permission. Playing Next uses a private macOS interface and is experimental.",
+  "author": "Ledge",
+  "capabilities": [
+    "apple-music-queue",
+    "apple-music-controls"
+  ],
+  "executable": "AppleMusicControls",
+  "icon": "Assets/Icon.png",
+  "surfaces": [
+    "settings-page",
+    "player-action",
+    "player",
+    "ai-tool"
+  ],
+  "kit": {
+    "minAPI": "0.17.0"
+  },
+  "category": "Media",
+  "creator": {
+    "name": "Ledge"
+  },
+  "source": {
+    "repository": "https://github.com/Ammyy9908/LedgeAddOns/tree/main/add-ons/apple-music-queue"
+  }
+}

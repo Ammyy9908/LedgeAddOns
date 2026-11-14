@@ -2,6 +2,10 @@
 
 Newest version first. Every new `version` in addon.json needs an entry here.
 
+## 0.15.0
+
+- Removes AI song search and direct playback tools. Song search and starting playback remain in Apple Music; queue, favorite, shuffle, and playlist controls remain available.
+
 ## 0.14.0
 
 - Adds an AI tool to favorite or unfavorite the currently playing song using the same Music current-track action as the player star, including streamed songs not yet in the library.

@@ -47,30 +47,20 @@ public struct AppleMusic: Sendable {
     public static let tools: [AddOnTool] = [
         AddOnTool("now_playing", title: "Get the Apple Music song playing now",
                   summary: "Returns the current Apple Music song, album, artist, favorite state, player state and position. It does not change playback."),
-        AddOnTool("search_songs", title: "Search the Apple Music catalog",
-                  summary: "Searches Apple's song catalog, including songs that are not in the user's library. Returns up to ten metadata results. Catalog results cannot be played by this add-on; use search_library to find playable songs already in the library.",
-                  arguments: [.init("query", summary: "A song title, artist or album to search for.", kind: .text(maximumLength: 300)),
-                              .init("storefront", summary: "Optional two-letter Apple Music country/storefront code, such as us or in. Defaults to this Mac's region.", kind: .text(maximumLength: 2), required: false)]),
-        AddOnTool("search_library", title: "Search songs in the Apple Music library",
-                  summary: "Searches songs already in the user's local Music library. Use this for playlist edits; it does not search the Apple Music catalog.",
-                  arguments: [.init("query", summary: "A song title, artist or album to search for.", kind: .text(maximumLength: 300))]),
-        AddOnTool("play_library_song", title: "Play an Apple Music library song",
-                  summary: "Starts the selected song already in the local library. Use an exact track_id from search_library and only when the user asked to play music.",
-                  arguments: [.init("track_id", summary: "Exact persistent library ID from search_library.", kind: .text(maximumLength: 16))]),
         AddOnTool("list_playing_next", title: "List songs in Apple Music Playing Next",
                   summary: "Lists up to 12 songs currently queued after the playing song. Use an exact song id from this result with play_song_next."),
         AddOnTool("play_song_next", title: "Move a queued song to play next",
                   summary: "Moves a song that is already in Playing Next to the front of the queue. Use an exact id from list_playing_next; reports success if the song has already started playing.",
                   arguments: [.init("song_id", summary: "Exact queue item id returned by list_playing_next.", kind: .text(maximumLength: 1024))]),
         AddOnTool("play_library_song_next", title: "Add a library song to Playing Next",
-                  summary: "Adds a song from the local Music library to the front of Playing Next. Use an exact track_id from search_library. Music must be playing; this uses Music's UI command through macOS Automation.",
-                  arguments: [.init("track_id", summary: "Exact persistent library ID from search_library.", kind: .text(maximumLength: 16))]),
+                  summary: "Adds a song from the local Music library to the front of Playing Next. Use an exact persistent library ID supplied by the user or returned in playlist contents. Music must be playing; this uses Music's UI command through macOS Automation.",
+                  arguments: [.init("track_id", summary: "Exact persistent library song ID.", kind: .text(maximumLength: 16))]),
         AddOnTool("set_shuffle", title: "Turn Apple Music shuffle on or off",
                   summary: "Sets Music's shuffle mode and returns the state Music reports.",
                   arguments: [.init("enabled", summary: "True to turn shuffle on, false to turn it off.", kind: .boolean)]),
         AddOnTool("set_song_favorite", title: "Favorite or unfavorite an Apple Music library song",
-                  summary: "Sets the favorite state of one song in the local Music library. Use an exact track_id from search_library.",
-                  arguments: [.init("track_id", summary: "Exact persistent library ID from search_library.", kind: .text(maximumLength: 16)),
+                  summary: "Sets the favorite state of one song in the local Music library. Use an exact persistent library ID supplied by the user or returned in playlist contents.",
+                  arguments: [.init("track_id", summary: "Exact persistent library song ID.", kind: .text(maximumLength: 16)),
                               .init("favorite", summary: "True to add it to Favorite Songs, false to remove it.", kind: .boolean)]),
         AddOnTool("set_now_playing_favorite", title: "Favorite or unfavorite the playing Apple Music song",
                   summary: "Sets the favorite state of the song currently playing in Music, including a streamed song that is not yet in the library. Uses the same current-track action as the player star.",
@@ -81,8 +71,8 @@ public struct AppleMusic: Sendable {
                   summary: "Returns up to 50 songs in a playlist with their IDs, titles, artists and albums. Use an ID returned by list_playlists.",
                   arguments: [.init("playlist_id", summary: "Exact persistent ID from list_playlists.", kind: .text(maximumLength: 16))]),
         AddOnTool("add_song_to_playlist", title: "Add a song to an Apple Music playlist",
-                  summary: "Adds one selected library song to one selected playlist. Use a track_id from search_library and a playlist_id from list_playlists; make the intended song and playlist clear before calling.",
-                  arguments: [.init("track_id", summary: "Exact persistent ID from search_library.", kind: .text(maximumLength: 16)),
+                  summary: "Adds one selected library song to one selected playlist. Use an exact persistent library song ID supplied by the user or returned in playlist contents, and a playlist_id from list_playlists; make the intended song and playlist clear before calling.",
+                  arguments: [.init("track_id", summary: "Exact persistent library song ID.", kind: .text(maximumLength: 16)),
                               .init("playlist_id", summary: "Exact persistent ID from list_playlists.", kind: .text(maximumLength: 16))]),
         AddOnTool("create_playlist", title: "Create an Apple Music playlist",
                   summary: "Creates an empty playlist in the user's Apple Music library using the requested name.",
@@ -174,38 +164,6 @@ public struct AppleMusic: Sendable {
                 "favorite": .bool(fields[4].lowercased() == "true"), "state": .string(String(fields[5].prefix(32))),
                 "position_seconds": Double(fields[6]).map { .number($0) } ?? .null
             ]))
-        case "search_songs":
-            guard let query = call.text("query")?.trimmingCharacters(in: .whitespacesAndNewlines), !query.isEmpty else {
-                throw AddOnError("Enter a song title, artist or album to search.")
-            }
-            let storefront = try AppleMusicCatalog.storefront(call.text("storefront"))
-            let found = try await AppleMusicCatalog.search(String(query.prefix(300)), storefront: storefront)
-            return .json(.object(["songs": .array(found.map { song in
-                .object(["catalog_id": .string(song.id), "title": .string(song.title),
-                         "artist": .string(song.artist), "album": .string(song.album),
-                         "storefront": .string(song.storefront)])
-            })]))
-        case "search_library":
-            guard let query = call.text("query")?.trimmingCharacters(in: .whitespacesAndNewlines), !query.isEmpty else {
-                throw AddOnError("Enter a song title, artist or album to search.")
-            }
-            let output = try await music(Scripts.searchLibrary, [String(query.prefix(300))])
-            let songs = output.split(separator: "\n").prefix(10).compactMap { line -> JSONValue? in
-                let fields = line.split(separator: "\t", omittingEmptySubsequences: false).map(String.init)
-                guard fields.count == 4, Self.isPersistentID(fields[0]) else { return nil }
-                return .object(["id": .string(fields[0]), "title": .string(String(fields[1].prefix(512))),
-                                "artist": .string(String(fields[2].prefix(512))), "album": .string(String(fields[3].prefix(512)))])
-            }
-            return .json(.object(["songs": .array(songs)]))
-        case "play_library_song":
-            guard let id = call.text("track_id"), Self.isPersistentID(id) else {
-                throw AddOnError("Use a library track ID returned by search_library.")
-            }
-            let fields = try await music(Scripts.playSong, [id]).trimmingCharacters(in: .whitespacesAndNewlines)
-                .components(separatedBy: "\t")
-            guard fields.count == 3 else { throw AddOnError("Music didn't confirm the selected library song.") }
-            return .json(.object(["id": .string(fields[0]), "title": .string(fields[1]), "artist": .string(fields[2]),
-                                  "accepted": .bool(true)]))
         case "list_playing_next":
             let entries = try await queue(playNext: nil)
             return .json(.object(["songs": .array(entries.map { entry in
@@ -243,7 +201,7 @@ public struct AppleMusic: Sendable {
             return .json(.object(result))
         case "play_library_song_next":
             guard let id = call.text("track_id"), Self.isPersistentID(id) else {
-                throw AddOnError("Use a library track ID returned by search_library.")
+                throw AddOnError("Use an exact persistent library song ID.")
             }
             let fields = try await music(Scripts.playLibrarySongNext, [id]).trimmingCharacters(in: .whitespacesAndNewlines)
                 .components(separatedBy: "\t")
@@ -265,7 +223,7 @@ public struct AppleMusic: Sendable {
             return .json(.object(["shuffle": .bool(result == "true")]))
         case "set_song_favorite":
             guard let id = call.text("track_id"), Self.isPersistentID(id), let favorite = call.boolean("favorite") else {
-                throw AddOnError("Use a library track ID from search_library and a favorite value.")
+                throw AddOnError("Use an exact persistent library song ID and a favorite value.")
             }
             let fields = try await music(Scripts.setLibraryFavorite, [id, favorite ? "true" : "false"])
                 .trimmingCharacters(in: .whitespacesAndNewlines).components(separatedBy: "\t")
@@ -303,7 +261,7 @@ public struct AppleMusic: Sendable {
         case "add_song_to_playlist":
             guard let trackID = call.text("track_id"), Self.isPersistentID(trackID),
                   let playlistID = call.text("playlist_id"), Self.isPersistentID(playlistID) else {
-                throw AddOnError("Use a song ID from search_library and a playlist ID from list_playlists.")
+                throw AddOnError("Use an exact persistent library song ID and a playlist ID from list_playlists.")
             }
             _ = try await music(Scripts.addSongToPlaylist, [trackID, playlistID])
             return .text("Apple Music added the selected song to the selected playlist.")
