@@ -42,22 +42,33 @@ public struct SpotifySongs: Sendable {
                 throw AddOnError("That Spotify device is no longer available. Open Spotify on it and list devices again.")
             }
             guard fields["is_restricted"] == .bool(false) else { throw AddOnError("Spotify does not allow playback control on that device.") }
+            // Capture the source state before Spotify activates (and may pause) the destination.
+            let shouldPlay: Bool
+            if call.boolean("play") == true { shouldPlay = true }
+            else { shouldPlay = try await playbackState()?.playing ?? false }
             _ = try await send("PUT", "/v1/me/player", [:], .object([
-                "device_ids": .array([.string(id)]), "play": .bool(call.boolean("play") ?? false)
+                "device_ids": .array([.string(id)]), "play": .bool(shouldPlay)
             ]))
-            // A 204 is acceptance, not confirmation that the destination is active.
-            var confirmed = false
-            for attempt in 0..<3 {
+            var active = false
+            var playing: Bool?
+            var resumed = false
+            for attempt in 0..<6 {
                 if attempt > 0 { try await Task.sleep(for: .milliseconds(400)) }
-                guard let current = try? await devices() else { break }
-                confirmed = current.contains { device in
-                    guard case .object(let value) = device else { return false }
-                    return value["id"] == .string(id) && value["is_active"] == .bool(true)
+                guard let current = try? await playbackState() else { continue }
+                active = current.deviceID == id
+                playing = active ? current.playing : nil
+                if active && current.playing == shouldPlay { break }
+                if active && shouldPlay && !current.playing && !resumed {
+                    // Send after transfer has completed; targeting the ID avoids resuming the old device.
+                    do { _ = try await send("PUT", "/v1/me/player/play", ["device_id": id]) }
+                    catch { throw AddOnError("Playback moved to the selected device, but Spotify refused to resume it. \(error)") }
+                    resumed = true
                 }
-                if confirmed { break }
             }
             return .json(.object(["device_id": .string(id), "name": fields["name"] ?? .string("Spotify device"),
-                                  "accepted": .bool(true), "active_confirmed": .bool(confirmed)]))
+                                  "accepted": .bool(true), "active_confirmed": .bool(active),
+                                  "requested_playing": .bool(shouldPlay), "playing": playing.map(JSONValue.bool) ?? .null,
+                                  "playback_confirmed": .bool(active && playing == shouldPlay)]))
         case "search_songs":
             let query = (call.text("query") ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             guard !query.isEmpty else { throw AddOnError("Enter a song title or artist to search.") }
@@ -87,6 +98,18 @@ public struct SpotifySongs: Sendable {
             return .text("Spotify accepted the playback request on your active device.")
         default: throw AddOnError("Unknown Spotify tool.")
         }
+    }
+
+    private func playbackState() async throws -> (deviceID: String?, playing: Bool)? {
+        let response = try await send("GET", "/v1/me/player", [:])
+        if response.status == 204 { return nil }
+        guard case .object(let root)? = response.body, case .bool(let playing)? = root["is_playing"],
+              case .object(let device)? = root["device"] else {
+            throw AddOnError("Spotify returned an invalid playback state.")
+        }
+        let id: String?
+        if case .string(let value)? = device["id"] { id = value } else { id = nil }
+        return (id, playing)
     }
 
     private static func validDeviceID(_ id: String) -> Bool {

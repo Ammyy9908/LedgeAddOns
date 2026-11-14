@@ -106,3 +106,14 @@ Examples: “List my Spotify devices” and “Move my Spotify playback to my iP
 
 References: [Available devices](https://developer.spotify.com/documentation/web-api/reference/get-a-users-available-devices)
 and [Transfer playback](https://developer.spotify.com/documentation/web-api/reference/transfer-a-users-playback).
+
+
+### Transfer playback verification (2.3.1)
+
+Transfer now reads the source playing state before moving devices. If the selected
+destination becomes active but remains paused when playback was requested, the
+add-on sends one explicit resume request with that destination's device_id. It
+then checks Spotify's playback state, returning playing, requested_playing, and
+playback_confirmed separately from active_confirmed. Unconfirmed playback must
+not be described as playing. This requires the updated Ledge host; existing device
+and playback grants and OAuth scopes are reused.

@@ -1,6 +1,6 @@
 {
   "id": "spotify-likes",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "protocolVersion": 2,
   "name": "Spotify Likes",
   "summary": "Like, search, play and transfer Spotify music",

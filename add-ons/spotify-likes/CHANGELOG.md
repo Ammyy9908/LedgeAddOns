@@ -2,6 +2,13 @@
 
 Newest version first. Every new `version` in addon.json needs an entry here.
 
+## 2.3.1
+
+- Preserve the source playback state before transferring devices.
+- Resume a paused destination explicitly by device ID when playback was requested.
+- Verify both the destination and playing state; active alone is no longer reported as playback confirmation.
+- Requires the updated Ledge host with targeted resume and playback-state broker endpoints.
+
 ## 2.3.0
 
 - Add AI tools to list Spotify Connect devices and transfer current playback to a selected device.
