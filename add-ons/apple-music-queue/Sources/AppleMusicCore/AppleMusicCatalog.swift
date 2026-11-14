@@ -8,7 +8,6 @@ struct AppleMusicCatalogSong: Sendable {
     let artist: String
     let album: String
     let storefront: String
-    let viewURL: String
 }
 
 enum AppleMusicCatalog {
@@ -22,7 +21,6 @@ enum AppleMusicCatalog {
         let trackName: String?
         let artistName: String?
         let collectionName: String?
-        let trackViewUrl: String?
     }
 
     static func search(_ query: String, storefront: String) async throws -> [AppleMusicCatalogSong] {
@@ -61,15 +59,13 @@ enum AppleMusicCatalog {
         return decoded.results.compactMap { result in
             guard result.kind == "song", let trackID = result.trackId, trackID > 0,
                   let title = result.trackName, !title.isEmpty,
-                  let artist = result.artistName, !artist.isEmpty,
-                  let viewURL = result.trackViewUrl, isSafeMusicURL(viewURL) else { return nil }
+                  let artist = result.artistName, !artist.isEmpty else { return nil }
             return AppleMusicCatalogSong(
                 id: String(trackID),
                 title: String(title.prefix(512)),
                 artist: String(artist.prefix(512)),
                 album: String((result.collectionName ?? "").prefix(512)),
-                storefront: storefront,
-                viewURL: viewURL
+                storefront: storefront
             )
         }.prefix(10).map { $0 }
     }
@@ -82,9 +78,4 @@ enum AppleMusicCatalog {
         return value
     }
 
-    static func isSafeMusicURL(_ text: String) -> Bool {
-        guard let url = URL(string: text), url.scheme == "https",
-              let host = url.host?.lowercased() else { return false }
-        return host == "music.apple.com" || host == "itunes.apple.com"
-    }
 }

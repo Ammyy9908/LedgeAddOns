@@ -44,6 +44,8 @@ enum Scripts {
         }
       }
       if (current < 0) return unavailable('The playing song wasn’t in Music’s queue.');
+      const currentItem = items.objectAtIndex(current);
+      const currentMetadata = read(currentItem, 'metadata');
       const entries = [];
       for (let i = current + 1; i < items.count && entries.length < 12; i++) {
         const item = items.objectAtIndex(i);
@@ -65,7 +67,9 @@ enum Scripts {
         if (store > 0) entry.storeID = String(store);
         entries.push(entry);
       }
-      return { status: 'available', entries: entries, currentID: currentID };
+      return { status: 'available', entries: entries, currentID: currentID,
+        current: { id: currentID, title: text(read(currentMetadata, 'title')) || '',
+          artist: (text(read(currentMetadata, 'trackArtistName')) || '').slice(0, 512) } };
     }
     function wait(seconds, done) {
       const deadline = $.NSDate.dateWithTimeIntervalSinceNow(seconds);
@@ -101,6 +105,7 @@ enum Scripts {
         const parsed = parse(response);
         if (!target || parsed.status !== 'available') return JSON.stringify(parsed);
         // Play next: only a song that's upcoming now, and only when Music offers the command (130).
+        if (parsed.currentID === target) return JSON.stringify(Object.assign(parsed, { accepted: true, actionState: 'playing' }));
         const commands = read(response, 'supportedCommands');
         let supported = false;
         for (let i = 0; commands && i < commands.count; i++) {
@@ -120,7 +125,20 @@ enum Scripts {
           updated = now ? parse(now) : null;
           return finished && updated && updated.status === 'available' && updated.entries.length > 0 && updated.entries[0].id === target;
         });
-        if (finished && updated && updated.entries.length > 0 && updated.entries[0].id === target) return JSON.stringify(updated);
+        if (updated && updated.status === 'available' && updated.currentID === target)
+          return JSON.stringify(Object.assign(updated, { accepted: true, actionState: 'playing' }));
+        if (updated && updated.status === 'available' && updated.entries.length > 0 && updated.entries[0].id === target)
+          return JSON.stringify(Object.assign(updated, { accepted: true, actionState: 'queued' }));
+        // Music can accept the move before MediaRemote publishes a new queue snapshot, or can start the track so
+        // quickly that it has already left the upcoming list. The dispatch returned without an error and this id
+        // was present in the validated queue, so report an accepted move instead of a false failure.
+        const source = updated && updated.status === 'available' ? updated.entries : parsed.entries;
+        const selected = source.find(function (entry) { return entry.id === target; }) || parsed.entries.find(function (entry) { return entry.id === target; });
+        if (selected) {
+          const entries = [selected].concat(source.filter(function (entry) { return entry.id !== target; }));
+          return JSON.stringify({ status: 'available', entries: entries, currentID: parsed.currentID,
+            current: parsed.current, accepted: true, actionState: 'queued' });
+        }
         return JSON.stringify(unavailable('Music didn’t confirm the change. Refresh and try again.'));
       } catch (e) {
         return JSON.stringify(unavailable('Music’s queue isn’t available on this version of macOS.'));
@@ -139,6 +157,50 @@ enum Scripts {
         set wanted to (item 1 of argv) is "true"
         tell application "Music" to set favorited of current track to wanted
         return wanted
+    end run
+    """#
+
+    /// Favorites or unfavorites the current song, matching the Ledge player star and not requiring a library ID.
+    static let setCurrentFavorite = #"""
+    on cleanText(value)
+        set AppleScript's text item delimiters to {tab, return, linefeed}
+        set parts to text items of (value as text)
+        set AppleScript's text item delimiters to " "
+        set resultText to parts as text
+        set AppleScript's text item delimiters to ""
+        return resultText
+    end cleanText
+    on run argv
+        set wanted to (item 1 of argv) is "true"
+        tell application "Music"
+            if player state is stopped then error "There is no song playing in Music."
+            set targetTrack to current track
+            set favorited of targetTrack to wanted
+            return my cleanText(name of targetTrack) & tab & my cleanText(artist of targetTrack) & tab & (favorited of targetTrack as text)
+        end tell
+    end run
+    """#
+
+    /// Sets the favorite state of one library track selected by persistent ID and returns its details.
+    static let setLibraryFavorite = #"""
+    on cleanText(value)
+        set AppleScript's text item delimiters to {tab, return, linefeed}
+        set parts to text items of (value as text)
+        set AppleScript's text item delimiters to " "
+        set resultText to parts as text
+        set AppleScript's text item delimiters to ""
+        return resultText
+    end cleanText
+    on run argv
+        set wantedID to item 1 of argv
+        set wantedFavorite to (item 2 of argv) is "true"
+        tell application "Music"
+            set matches to (every track of library playlist 1 whose persistent ID is wantedID)
+            if (count of matches) is not 1 then error "That song is no longer in your library. Search again."
+            set targetTrack to item 1 of matches
+            set favorited of targetTrack to wantedFavorite
+            return (persistent ID of targetTrack) & tab & my cleanText(name of targetTrack) & tab & my cleanText(artist of targetTrack) & tab & (favorited of targetTrack as text)
+        end tell
     end run
     """#
 
@@ -214,6 +276,45 @@ enum Scripts {
     end run
     """#
 
+    /// Adds a selected local library track to Playing Next through Music's own Song > Play Next command.
+    /// Music's AppleScript dictionary does not expose an add-to-queue command, so the UI command is invoked by
+    /// System Events after revealing and selecting the exact track. This requires Accessibility approval.
+    static let playLibrarySongNext = #"""
+    on run argv
+        set wantedID to item 1 of argv
+        tell application "Music"
+            if player state is stopped then error "Start a song before adding another song to Playing Next."
+            set matches to (every track of library playlist 1 whose persistent ID is wantedID)
+            if (count of matches) is not 1 then error "That song is no longer in your library. Search again."
+            set targetTrack to item 1 of matches
+            activate
+            reveal targetTrack
+            select targetTrack
+        end tell
+        delay 0.2
+        tell application "System Events"
+            tell process "Music"
+                set frontmost to true
+                click menu item "Play Next" of menu 1 of menu bar item "Song" of menu bar 1
+            end tell
+        end tell
+        tell application "Music"
+            return (persistent ID of targetTrack) & tab & (name of targetTrack) & tab & (artist of targetTrack)
+        end tell
+    end run
+    """#
+
+    /// Sets and reads back Music's global shuffle mode.
+    static let setShuffle = #"""
+    on run argv
+        set wanted to (item 1 of argv) is "true"
+        tell application "Music"
+            set shuffle enabled to wanted
+            return shuffle enabled as text
+        end tell
+    end run
+    """#
+
     /// Adds the selected library track to a selected non-smart user playlist.
     static let addSongToPlaylist = #"""
     on run argv
@@ -265,31 +366,6 @@ enum Scripts {
         end tell
         set AppleScript's text item delimiters to linefeed
         return output as text
-    end run
-    """#
-
-
-    /// Opens an Apple song-store URL in Music and waits for the exact catalog title and artist to become current.
-    /// The URL and expected labels are arguments, never interpolated into script source.
-    static let playCatalogSong = #"""
-    on run argv
-        set targetURL to item 1 of argv
-        set targetTitle to item 2 of argv
-        set targetArtist to item 3 of argv
-        tell application "Music" to open location targetURL
-        repeat 20 times
-            delay 0.25
-            try
-                tell application "Music"
-                    set t to current track
-                    if (name of t is targetTitle) and (artist of t is targetArtist) then
-                        if player state is not playing then play t
-                        if player state is playing then return "playing" & tab & (name of t) & tab & (artist of t) & tab & (player state as text)
-                    end if
-                end tell
-            end try
-        end repeat
-        return "unconfirmed"
     end run
     """#
 }

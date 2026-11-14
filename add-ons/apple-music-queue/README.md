@@ -9,7 +9,7 @@ Test with `swift test --package-path add-ons/apple-music-queue`.
 ## How it works
 
 The add-on is an ordinary session (LedgeKit 0.17.0): the star is a player action, the menu and Playing Next a player
-extension, and AI tools expose read-only lookup plus explicit playback and playlist operations. It runs fixed
+extension, and AI tools expose read-only lookup plus explicit playback, queue, favorite, and playlist operations. It runs fixed
 `osascript` programs (`Sources/AppleMusicCore/Scripts.swift`); anything that varies, such as a playlist, song id,
 search text or playlist name, is passed as an argument, never written into a script.
 
@@ -18,15 +18,29 @@ search text or playlist name, is passed as an argument, never written into a scr
   to ten catalog matches, including songs that are not in the local library. It returns catalog IDs separately from
   Music's persistent library IDs. The storefront defaults to the Mac's region; pass a two-letter `storefront` to
   search another country.
-- `play_song` accepts a catalog ID from the most recent `search_songs` call, opens Apple's returned song link
-  in Music, and reports success only after Music shows that exact title and artist playing. The person must have
-  Music signed in and the selected result available in that storefront.
+- Catalog search returns metadata only. This add-on cannot start catalog-only tracks; that requires a MusicKit-enabled
+  app identity and user authorization.
+- `play_library_song` starts a song that is already in the user's local Music library. Use an exact `track_id`
+  returned by `search_library`.
+- `list_playing_next` returns up to 12 songs after the current song. Use an exact queue `id` from that result with
+  `play_song_next` to move an upcoming song to the front. If Music starts that song before its queue snapshot
+  refreshes, the tool reports success with the song's current state instead of a false queue-readback failure.
+  This tool only reorders songs already in the queue; it does not add a library song to Playing Next.
+- `play_library_song_next` adds a local library song to the front of Playing Next. It uses Music's **Song → Play
+  Next** menu action through System Events because Music does not expose this operation in its AppleScript dictionary.
+  Music must be playing; macOS may ask for permission to control System Events or Accessibility access.
+- `set_shuffle` turns Music's shuffle setting on or off and checks the value Music returns.
+- `set_song_favorite` favorites or unfavorites a library song by its exact `track_id` from `search_library`.
+- `set_now_playing_favorite` applies the player star behavior to the current Music track, even if it is a streamed
+  song that has not yet been added to the local library.
+- `add_song_to_playlist` adds a selected local library song to a selected editable playlist. These reversible music
+  actions do not require Ledge's per-call confirmation; macOS Automation and, for Play Next UI scripting, Accessibility
+  permissions still apply.
 - `search_library` remains available for songs already in the local library. Use its IDs with
   `add_song_to_playlist`; `list_playlists` and `list_playlist_songs` provide the playlist IDs and contents.
-  `create_playlist` makes an empty playlist. Ledge asks before playlist mutations.
-- Catalog search uses Apple's public iTunes Search API for metadata and Music store links; playback is handed to the
-  Music app. It does not retrieve personalized recommendations or listening history, which require a separate
-  MusicKit authorization flow.
+  `create_playlist` makes an empty playlist.
+- Catalog search uses Apple's public iTunes Search API for metadata. It does not retrieve personalized
+  recommendations or listening history.
 - Playing Next uses MediaRemote's `MRNowPlayingController`, a private interface macOS answers only for its own
   programs (others get error 3). `osascript` is one, so the queue program is JavaScript for Automation run by it.
   It asks for 20 items, checks that Music is the source, finds the playing song by the id in the same answer and
