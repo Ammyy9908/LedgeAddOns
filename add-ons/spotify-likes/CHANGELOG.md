@@ -2,6 +2,13 @@
 
 Newest version first. Every new `version` in addon.json needs an entry here.
 
+## 2.3.0
+
+- Add AI tools to list Spotify Connect devices and transfer current playback to a selected device.
+- Preserve playing/paused state by default and report whether the destination becomes active.
+- Reject unavailable or restricted destinations before transferring.
+- Require the host's new spotify-devices grant and reconnecting Spotify for device discovery permission.
+
 ## 2.2.0
 
 - Add AI tools to search Spotify songs and play a selected URI on the active device.

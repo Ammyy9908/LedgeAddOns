@@ -1,15 +1,16 @@
 {
   "id": "spotify-likes",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "protocolVersion": 2,
   "name": "Spotify Likes",
-  "summary": "Like, search and play Spotify songs",
-  "description": "Like or unlike the current Spotify song with the heart in Ledge\u2019s players. Sign in to Spotify on the add-on\u2019s settings page; Ledge keeps the sign-in. Enabled AI apps can search songs and play a selected result on your active Spotify device. Playback requires Premium and reconnecting Spotify for playback permission.",
+  "summary": "Like, search, play and transfer Spotify music",
+  "description": "Like or unlike the current Spotify song with the heart in Ledge\u2019s players. Sign in to Spotify on the add-on\u2019s settings page; Ledge keeps the sign-in. Enabled AI apps can search songs and play a selected result on your active Spotify device. Playback requires Premium and reconnecting Spotify for playback permission. List Spotify Connect devices and transfer playback to a chosen device. Reconnect Spotify to allow device discovery.",
   "author": "Ledge",
   "capabilities": [
     "spotify-library",
     "spotify-search",
-    "spotify-playback"
+    "spotify-playback",
+    "spotify-devices"
   ],
   "executable": "SpotifyLikes",
   "icon": "Assets/Icon.png",

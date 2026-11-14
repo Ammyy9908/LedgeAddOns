@@ -82,3 +82,27 @@ an accepted API request is not a confirmation that audio is audible.
 
 API references: [Search](https://developer.spotify.com/documentation/web-api/reference/search)
 and [Start playback](https://developer.spotify.com/documentation/web-api/reference/start-a-users-playback).
+
+
+## Device switching (2.3.0)
+
+- `list_devices()` returns Spotify Connect device IDs, names, types, active status,
+  and restrictions. A null ID cannot be used for transfer. Some devices may not be
+  visible until Spotify is opened on them.
+- `transfer_playback(device_id, play?)` moves the current playback to one listed
+  device. Omit `play` (or use false) to preserve playing/paused state; true starts
+  playback. It refreshes the device list before transferring and rejects absent
+  or restricted destinations. It returns `accepted` separately from
+  `active_confirmed`; API acceptance alone does not prove audio is audible.
+
+The updated host must recognize and approve the separate `spotify-devices`
+capability. Existing playback grants do not automatically permit device access.
+Load this package and approve that capability in Ledge, then reconnect Spotify
+in the add-on settings to grant `user-read-playback-state` alongside the existing
+`user-modify-playback-state`. Transfers require Spotify Premium. Use exact IDs
+from a fresh list, and ask which device when names are ambiguous.
+
+Examples: “List my Spotify devices” and “Move my Spotify playback to my iPhone.”
+
+References: [Available devices](https://developer.spotify.com/documentation/web-api/reference/get-a-users-available-devices)
+and [Transfer playback](https://developer.spotify.com/documentation/web-api/reference/transfer-a-users-playback).
