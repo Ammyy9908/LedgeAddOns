@@ -42,6 +42,13 @@ actor Notes {
                   arguments: [.init("id", summary: "The note's id, from search_notes.", kind: .text(maximumLength: 64))]),
         AddOnTool("add_note", title: "Add a note", summary: "Adds a new note with the given Markdown text and returns its id and title.",
                   arguments: [.init("text", summary: "The note, in Markdown. Its first line is its title.", kind: .text(maximumLength: 20_000))]),
+        AddOnTool("edit_note", title: "Edit a note", summary: "Replaces a note's Markdown text. Ledge asks the person to approve every edit.",
+                  arguments: [.init("id", summary: "The note's id, from search_notes.", kind: .text(maximumLength: 64)),
+                              .init("text", summary: "The replacement note, in Markdown. Its first line is its title.", kind: .text(maximumLength: 20_000))],
+                  destructive: true),
+        AddOnTool("delete_note", title: "Move a note to the Trash", summary: "Moves a note to the Trash. Ledge asks the person to approve every deletion.",
+                  arguments: [.init("id", summary: "The note's id, from search_notes.", kind: .text(maximumLength: 64))],
+                  destructive: true),
     ]
 
     func tool(_ call: ToolCall) throws -> ToolResult {
@@ -73,6 +80,36 @@ actor Notes {
             AddOnSession.show(settingsPage())
             show()
             return .json(.object(["id": .string(note.id), "title": .string(note.title)]))
+        case "edit_note":
+            guard let id = call.text("id"), let index = notes.firstIndex(where: { $0.id == id }),
+                  let text = call.text("text") else {
+                throw AddOnError("There's no note with that id, or the replacement text is missing. Use search_notes to find a note.")
+            }
+            var note = notes[index]
+            note.text = text
+            note.modified = Date()
+            do { try store.save(note) } catch {
+                AddOnSession.log("Save failed: \(error)", level: .error)
+                throw AddOnError("Notes couldn't save the edit.")
+            }
+            notes[index] = note
+            AddOnSession.show(settingsPage())
+            show()
+            return .json(.object(["id": .string(note.id), "title": .string(note.title)]))
+        case "delete_note":
+            guard let id = call.text("id"), notes.contains(where: { $0.id == id }) else {
+                throw AddOnError("There's no note with that id. Use search_notes to find one.")
+            }
+            do { try store.trash(id) } catch {
+                AddOnSession.log("Couldn't move the note to the Trash: \(error)", level: .error)
+                throw AddOnError("Notes couldn't move it to the Trash.")
+            }
+            notes.removeAll { $0.id == id }
+            if draft == id { draft = nil }
+            if open == id { open = nil }
+            AddOnSession.show(settingsPage())
+            show()
+            return .text("Moved the note to the Trash.")
         default:
             throw AddOnError("Notes has no tool named \(call.tool).")
         }

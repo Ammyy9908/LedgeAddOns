@@ -23,6 +23,11 @@ whenever the page opens. **Show in Finder** on the add-on's settings page opens 
 
 It reads nothing outside its folder, sends nothing off the Mac, and logs failures without note text.
 
+## Tools for AI apps
+
+Once AI apps and Notes' tools are enabled in Ledge's Settings, an allowed AI app can search, read, add and edit notes,
+or move one to the Trash. Ledge asks for approval in the notch before every edit and deletion.
+
 ## What it doesn't do
 
 No sync, no search inside notes, no attachments, and no access to Apple Notes.

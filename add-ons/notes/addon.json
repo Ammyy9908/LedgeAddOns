@@ -1,6 +1,6 @@
 {
     "id": "notes",
-    "version": "0.5.0",
+    "version": "0.6.0",
     "protocolVersion": 2,
     "name": "Notes",
     "summary": "Write notes in the notch",

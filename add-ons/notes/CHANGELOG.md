@@ -2,10 +2,14 @@
 
 Newest version first. Every new `version` in addon.json needs an entry here.
 
+## 0.6.0
+
+- AI apps can edit notes and move them to the Trash. Ledge asks for notch approval before every edit or deletion.
+
 ## 0.5.0
 
-- Tools for AI apps: Claude, Cursor or Codex can search your notes, read one, and add one, once you turn on AI apps
-  and Notes' tools in Ledge's Settings. Nothing can be changed or deleted this way.
+- Tools for AI apps: Claude, Cursor or Codex can search, read, add, edit and move notes to the Trash, once you turn on AI apps
+  and Notes' tools in Ledge's Settings. Edits and deletions need approval in the notch.
 - Needs a Ledge with LedgeKit 0.16.0.
 
 ## 0.4.0
