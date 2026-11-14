@@ -55,6 +55,9 @@ public struct AppleMusic: Sendable {
                   arguments: [.init("track_id", summary: "Exact persistent ID from search_songs.", kind: .text(maximumLength: 16))]),
         AddOnTool("list_playlists", title: "List Apple Music playlists",
                   summary: "Lists the user's editable, non-smart playlists with IDs and names. It does not change the library."),
+        AddOnTool("list_playlist_songs", title: "List songs in an Apple Music playlist",
+                  summary: "Returns up to 50 songs in a playlist with their IDs, titles, artists and albums. Use an ID returned by list_playlists.",
+                  arguments: [.init("playlist_id", summary: "Exact persistent ID from list_playlists.", kind: .text(maximumLength: 16))]),
         AddOnTool("add_song_to_playlist", title: "Add a song to an Apple Music playlist",
                   summary: "Adds one selected library song to one selected playlist. Use IDs returned by search_songs and list_playlists; make the intended song and playlist clear before calling.",
                   arguments: [.init("track_id", summary: "Exact persistent ID from search_songs.", kind: .text(maximumLength: 16)),
@@ -173,6 +176,18 @@ public struct AppleMusic: Sendable {
         case "list_playlists":
             let rows = Self.parsePlaylists(try await music(Scripts.playlists, []))
             return .json(.object(["playlists": .array(rows.map { .object(["id": .string($0.id), "name": .string($0.title)]) })]))
+        case "list_playlist_songs":
+            guard let playlistID = call.text("playlist_id"), Self.isPersistentID(playlistID) else {
+                throw AddOnError("Use a playlist ID from list_playlists.")
+            }
+            let output = try await music(Scripts.listPlaylistSongs, [playlistID])
+            let songs = output.split(separator: "\n").prefix(50).compactMap { line -> JSONValue? in
+                let fields = line.split(separator: "\t", omittingEmptySubsequences: false).map(String.init)
+                guard fields.count == 4, Self.isPersistentID(fields[0]) else { return nil }
+                return .object(["id": .string(fields[0]), "title": .string(String(fields[1].prefix(512))),
+                                "artist": .string(String(fields[2].prefix(512))), "album": .string(String(fields[3].prefix(512)))])
+            }
+            return .json(.object(["songs": .array(songs)]))
         case "add_song_to_playlist":
             guard let trackID = call.text("track_id"), Self.isPersistentID(trackID),
                   let playlistID = call.text("playlist_id"), Self.isPersistentID(playlistID) else {
