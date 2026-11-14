@@ -34,7 +34,7 @@ private func list(_ items: [JSONValue]) -> HostResponse {
         var args: [String: JSONValue] = ["device_id": .string("phone")]
         if play { args["play"] = .bool(true) }
         #expect(try await songs.call(ToolCall(tool: "transfer_playback", arguments: args)) == .json(.object([
-            "device_id": .string("phone"), "name": .string("My iPhone"), "accepted": .bool(true), "active_confirmed": .bool(true), "requested_playing": .bool(play), "playing": .bool(play), "playback_confirmed": .bool(true)
+            "device_id": .string("phone"), "name": .string("My iPhone"), "accepted": .bool(true), "active_confirmed": .bool(true), "requested_playing": .bool(play), "playing": .bool(play), "playback_confirmed": .bool(true), "position_confirmed": .null, "source_position_ms": .null
         ])))
     }
 }
@@ -106,5 +106,44 @@ private actor PausingTransfer {
         #expect(fields["active_confirmed"] == .bool(true))
         #expect(fields["playing"] == .bool(resumeWorks))
         #expect(fields["playback_confirmed"] == .bool(resumeWorks))
+    }
+}
+
+
+private actor RestartingTransfer {
+    var transferred = false
+    var sought = false
+    let changesSong: Bool
+    let seekWorks: Bool
+    init(changesSong: Bool = false, seekWorks: Bool = true) { self.changesSong = changesSong; self.seekWorks = seekWorks }
+    func request(_ method: String, _ path: String, _ query: [String: String], _ body: JSONValue?) -> HostResponse {
+        if path == "/v1/me/player/devices" { return list([device()]) }
+        if method == "GET" {
+            return HostResponse(status: 200, body: .object([
+                "device": .object(["id": .string(transferred ? "phone" : "mac")]), "is_playing": .bool(true),
+                "progress_ms": .number(!transferred || (sought && seekWorks) ? 120000 : 0),
+                "item": .object(["uri": .string(transferred && changesSong ? "spotify:track:other" : "spotify:track:original")])
+            ]))
+        }
+        if path == "/v1/me/player" { transferred = true }
+        else {
+            #expect(path == "/v1/me/player/seek")
+            #expect(query == ["device_id": "phone", "position_ms": "120000"])
+            #expect(body == nil)
+            sought = true
+        }
+        return HostResponse(status: 204, body: nil)
+    }
+}
+
+@Test func transferRestoresPositionAndDoesNotSeekADifferentSong() async throws {
+    for (changesSong, seekWorks) in [(false, true), (true, true), (false, false)] {
+        let api = RestartingTransfer(changesSong: changesSong, seekWorks: seekWorks)
+        let songs = SpotifySongs { method, path, query, body in await api.request(method, path, query, body) }
+        let result = try await songs.call(ToolCall(tool: "transfer_playback", arguments: ["device_id": .string("phone")]))
+        guard case .json(.object(let fields)) = result else { Issue.record("Expected result"); return }
+        #expect(await api.sought == !changesSong)
+        #expect(fields["source_position_ms"] == .number(120000))
+        #expect(fields["position_confirmed"] == .bool(!changesSong && seekWorks))
     }
 }

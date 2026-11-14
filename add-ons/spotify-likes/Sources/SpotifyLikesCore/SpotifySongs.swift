@@ -43,21 +43,41 @@ public struct SpotifySongs: Sendable {
             }
             guard fields["is_restricted"] == .bool(false) else { throw AddOnError("Spotify does not allow playback control on that device.") }
             // Capture the source state before Spotify activates (and may pause) the destination.
-            let shouldPlay: Bool
-            if call.boolean("play") == true { shouldPlay = true }
-            else { shouldPlay = try await playbackState()?.playing ?? false }
+            let source = try await playbackState()
+            let shouldPlay = call.boolean("play") == true || source?.playing == true
+            let sourcePosition = source?.position
+            let sourceURI = source?.uri
             _ = try await send("PUT", "/v1/me/player", [:], .object([
                 "device_ids": .array([.string(id)]), "play": .bool(shouldPlay)
             ]))
             var active = false
             var playing: Bool?
             var resumed = false
-            for attempt in 0..<6 {
+            var positionConfirmed: Bool? = sourcePosition != nil && sourceURI != nil ? false : nil
+            var seekSentAt: Date?
+            for attempt in 0..<10 {
                 if attempt > 0 { try await Task.sleep(for: .milliseconds(400)) }
                 guard let current = try? await playbackState() else { continue }
                 active = current.deviceID == id
                 playing = active ? current.playing : nil
-                if active && current.playing == shouldPlay { break }
+                if active && current.playing == shouldPlay {
+                    if let position = sourcePosition, let uri = sourceURI {
+                        // Never apply an old song's position to a new song or a changed queue.
+                        guard current.uri == uri else { break }
+                        if let observed = current.position {
+                            let elapsed = seekSentAt.map { shouldPlay ? Date().timeIntervalSince($0) * 1000 : 0 } ?? 0
+                            if abs(Double(observed - position) - elapsed) <= 2500 {
+                                positionConfirmed = true
+                                break
+                            }
+                        }
+                        if seekSentAt == nil {
+                            do { _ = try await send("PUT", "/v1/me/player/seek", ["device_id": id, "position_ms": String(position)]) }
+                            catch { throw AddOnError("Playback moved, but Spotify could not restore the song position. \(error)") }
+                            seekSentAt = Date()
+                        }
+                    } else { break }
+                }
                 if active && shouldPlay && !current.playing && !resumed {
                     // Send after transfer has completed; targeting the ID avoids resuming the old device.
                     do { _ = try await send("PUT", "/v1/me/player/play", ["device_id": id]) }
@@ -68,7 +88,9 @@ public struct SpotifySongs: Sendable {
             return .json(.object(["device_id": .string(id), "name": fields["name"] ?? .string("Spotify device"),
                                   "accepted": .bool(true), "active_confirmed": .bool(active),
                                   "requested_playing": .bool(shouldPlay), "playing": playing.map(JSONValue.bool) ?? .null,
-                                  "playback_confirmed": .bool(active && playing == shouldPlay)]))
+                                  "playback_confirmed": .bool(active && playing == shouldPlay),
+                                  "position_confirmed": positionConfirmed.map(JSONValue.bool) ?? .null,
+                                  "source_position_ms": sourcePosition.map { .number(Double($0)) } ?? .null]))
         case "search_songs":
             let query = (call.text("query") ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             guard !query.isEmpty else { throw AddOnError("Enter a song title or artist to search.") }
@@ -100,7 +122,7 @@ public struct SpotifySongs: Sendable {
         }
     }
 
-    private func playbackState() async throws -> (deviceID: String?, playing: Bool)? {
+    private func playbackState() async throws -> (deviceID: String?, playing: Bool, position: Int?, uri: String?)? {
         let response = try await send("GET", "/v1/me/player", [:])
         if response.status == 204 { return nil }
         guard case .object(let root)? = response.body, case .bool(let playing)? = root["is_playing"],
@@ -109,7 +131,14 @@ public struct SpotifySongs: Sendable {
         }
         let id: String?
         if case .string(let value)? = device["id"] { id = value } else { id = nil }
-        return (id, playing)
+        let position: Int?
+        if case .number(let value)? = root["progress_ms"], value.isFinite, value >= 0, value <= 2_147_483_647 {
+            position = Int(value)
+        } else { position = nil }
+        let uri: String?
+        if case .object(let item)? = root["item"], case .string(let value)? = item["uri"] { uri = value }
+        else { uri = nil }
+        return (id, playing, position, uri)
     }
 
     private static func validDeviceID(_ id: String) -> Bool {

@@ -2,6 +2,13 @@
 
 Newest version first. Every new `version` in addon.json needs an entry here.
 
+## 2.3.2
+
+- Capture the source song URI and position before transferring.
+- Restore the captured position on the destination when Spotify restarts the song, and verify progress separately from playback.
+- Never seek if the destination changed songs; report unknown position when source progress is unavailable.
+- Requires the updated Ledge host's scoped seek endpoint.
+
 ## 2.3.1
 
 - Preserve the source playback state before transferring devices.

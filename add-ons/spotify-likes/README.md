@@ -117,3 +117,14 @@ then checks Spotify's playback state, returning playing, requested_playing, and
 playback_confirmed separately from active_confirmed. Unconfirmed playback must
 not be described as playing. This requires the updated Ledge host; existing device
 and playback grants and OAuth scopes are reused.
+
+
+### Preserve position (2.3.2)
+
+The source track URI and progress_ms are captured before transfer. After playback
+is resumed on the destination, a device-targeted seek restores the saved position
+if the same song restarted. Progress is checked within a 2.5-second tolerance;
+position_confirmed is separate from playback_confirmed and source_position_ms
+records the captured point. Missing source metadata returns an unknown position
+confirmation; a changed song is never sought using the previous song's progress.
+Requires the updated host's seek endpoint, using the existing device/playback grants.
