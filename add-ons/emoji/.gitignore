@@ -1,0 +1,9 @@
+.build/
+.swiftpm/
+*.ledgeaddon
+shots/
+AGENTS.md
+CLAUDE.md
+.cursor/
+.mcp.json
+check/

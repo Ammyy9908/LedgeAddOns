@@ -1,0 +1,33 @@
+{
+  "author" : "Ledge",
+  "capabilities" : [
+    "insert-text"
+  ],
+  "category" : "Productivity",
+  "creator" : {
+    "name" : "Ledge"
+  },
+  "description" : "Every emoji in a floating picker on a shortcut, from any app. Search by name, move with the arrow keys, and press Return: Ledge types the emoji where you were and leaves your clipboard alone, or copies it if you'd rather. Pick a skin tone, and your recent emoji come first.",
+  "executable" : "Emoji",
+  "icon" : "Assets/Icon.png",
+  "id" : "emoji",
+  "keywords" : [
+    "emoji",
+    "smiley",
+    "picker"
+  ],
+  "kit" : {
+    "minAPI" : "0.19.0"
+  },
+  "name" : "Emoji",
+  "protocolVersion" : 2,
+  "source" : {
+    "repository" : "https://github.com/Ammyy9908/LedgeAddOns/tree/main/add-ons/emoji"
+  },
+  "summary" : "Every emoji, one shortcut away",
+  "surfaces" : [
+    "settings-page",
+    "picker"
+  ],
+  "version" : "0.1.0"
+}

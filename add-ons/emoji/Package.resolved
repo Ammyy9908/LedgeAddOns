@@ -1,0 +1,15 @@
+{
+  "originHash" : "db4a73612dc02cb130f66449955b2e8e0925108d453dac7b2db03cdb4bf53539",
+  "pins" : [
+    {
+      "identity" : "ledgekit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Ammyy9908/LedgeKit.git",
+      "state" : {
+        "revision" : "f7b86ac829fe569156074d50e2ef7a64ff7acd22",
+        "version" : "0.19.0"
+      }
+    }
+  ],
+  "version" : 3
+}
