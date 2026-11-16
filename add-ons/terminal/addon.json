@@ -1,0 +1,33 @@
+{
+  "author" : "Ledge",
+  "capabilities" : [
+    "terminal"
+  ],
+  "category" : "Productivity",
+  "creator" : {
+    "name" : "Ledge"
+  },
+  "description" : "Your login shell on a Terminal page in the notch, with full-screen programs like vim, top and ssh. It runs as you, with your access to everything on this Mac, like a shell in Terminal. What you type goes only to the shell. Open the shell's folder in your terminal app with one click, and pick a shortcut in Ledge's Settings.",
+  "executable" : "Terminal",
+  "icon" : "Assets/Icon.png",
+  "id" : "terminal",
+  "keywords" : [
+    "shell",
+    "zsh",
+    "command line"
+  ],
+  "kit" : {
+    "minAPI" : "0.18.0"
+  },
+  "name" : "Terminal",
+  "protocolVersion" : 2,
+  "source" : {
+    "repository" : "https://github.com/Ammyy9908/LedgeAddOns/tree/main/add-ons/terminal"
+  },
+  "summary" : "Your shell in the notch",
+  "surfaces" : [
+    "settings-page",
+    "terminal"
+  ],
+  "version" : "0.1.0"
+}
