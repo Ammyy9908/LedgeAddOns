@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "Emoji",
     platforms: [.macOS(.v14)],
-    dependencies: [.package(path: "../../../../LedgeKit")],
+    dependencies: [.package(url: "https://github.com/Ammyy9908/LedgeKit.git", exact: "0.19.0")],
     targets: [
         // What the add-on knows and what it shows, testable without Ledge.
         .target(name: "EmojiCore", dependencies: [.product(name: "LedgeKit", package: "LedgeKit")]),
