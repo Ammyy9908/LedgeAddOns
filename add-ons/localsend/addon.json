@@ -1,0 +1,28 @@
+{
+    "id": "localsend",
+    "version": "0.1.0",
+    "protocolVersion": 2,
+    "name": "LocalSend",
+    "summary": "Send files to devices nearby",
+    "description": "Send files to phones and computers on the same network that run LocalSend, and receive from them, with no cloud in between. Drop files on a device in the notch or choose Send with LocalSend on a shelf item. You accept every transfer in the notch, and received files land in Downloads and on your shelf. Transfers are encrypted.",
+    "author": "Sumit",
+    "capabilities": [
+        "shared-files",
+        "shelf-add",
+        "questions",
+        "local-network",
+        "clipboard-write"
+    ],
+    "surfaces": [
+        "share-target",
+        "notch-page",
+        "settings-page"
+    ],
+    "kit": {
+        "minAPI": "0.20.0"
+    },
+    "executable": "LocalSend",
+    "icon": "Assets/Icon.png",
+    "category": "Productivity",
+    "keywords": ["localsend", "airdrop", "share", "transfer", "android", "phone"]
+}
