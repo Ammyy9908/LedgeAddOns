@@ -147,11 +147,13 @@ def compile_icon(package, destination):
     if not document.is_dir():
         return False
     with tempfile.TemporaryDirectory() as work:
-        subprocess.run(["xcrun", "actool", str(document), "--compile", work, "--app-icon", "Icon",
-                        "--platform", "macosx", "--minimum-deployment-target", "14.0",
-                        "--output-partial-info-plist", work + "/Info.plist"], check=True, stdout=subprocess.DEVNULL)
+        result = subprocess.run(["xcrun", "actool", str(document), "--compile", work, "--app-icon", "Icon",
+                                 "--platform", "macosx", "--minimum-deployment-target", "14.0",
+                                 "--output-partial-info-plist", work + "/Info.plist"], capture_output=True, text=True)
         car = pathlib.Path(work) / "Assets.car"
-        assert car.is_file() and car.read_bytes().startswith(b"BOMStore"), f"actool made no Assets.car from {document}"
+        # actool can exit 0 having made nothing, as an Xcode older than 26 does with a .icon; say what it said.
+        assert result.returncode == 0 and car.is_file() and car.read_bytes().startswith(b"BOMStore"), \
+            f"actool made no Assets.car from {document} (Xcode 26 or later needed):\n{result.stdout}{result.stderr}"
         assert car.stat().st_size <= 4 * 1024 * 1024, f"{document} compiles to more than 4 MB"
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_bytes(car.read_bytes())
