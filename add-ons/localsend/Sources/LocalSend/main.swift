@@ -43,6 +43,8 @@ actor LocalSend {
     private var asking = false
     private var wrongPins: [String: Int] = [:]
     private var lastShown = Date.distantPast
+    /// How the last transfer ended, beside the notch for a few seconds.
+    private var ended: (text: String, symbol: String, until: Date)?
 
     struct Receiving {
         let id: String
@@ -299,6 +301,7 @@ actor LocalSend {
         let got = session.done.count
         notice = got == 0 ? (cancelled ? "\(session.sender) cancelled" : nil)
             : "Received \(got) \(got == 1 ? "file" : "files") from \(session.sender)" + (cancelled ? ", then it stopped" : "")
+        if let notice { ended = (notice, got == 0 ? "xmark.circle" : "checkmark.circle", Date().addingTimeInterval(5)) }
         show()
         guard got > 0, toShelf else { return }
         var items: [URL] = []
@@ -418,9 +421,11 @@ actor LocalSend {
     }
 
     private func endSending(_ message: String) {
+        let sent = message.hasPrefix("Sent ")
         sending = nil
         sendTask = nil
         notice = message
+        ended = (message, sent ? "checkmark.circle" : "xmark.circle", Date().addingTimeInterval(5))
         show()
     }
 
@@ -483,6 +488,34 @@ actor LocalSend {
         }, emptyNote: "No devices nearby"))
         AddOnSession.show(notchPage: NotchPage(title: "LocalSend", symbol: "paperplane", screen: screen(Array(nearby))))
         AddOnSession.show(settingsPage())
+        AddOnSession.show(activities: activities())
+    }
+
+    /// Beside the notch while a transfer runs, wherever the person is: who, how far, and how much of it.
+    private func activities() -> [LiveActivity] {
+        func size(_ bytes: Int64) -> String { ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file) }
+        func percent(_ fraction: Double) -> String { "\(Int(fraction * 100)) percent" }
+        if let sending {
+            let who = String(sending.peer.info.alias.prefix(24))
+            if sending.waiting {
+                return [LiveActivity("transfer", symbol: "arrow.up.circle", text: "Waiting for \(who)", progress: .indeterminate)]
+            }
+            let done = sending.sentBefore + sending.current
+            let fraction = sending.total == 0 ? 0 : min(1, Double(done) / Double(sending.total))
+            return [LiveActivity("transfer", symbol: "arrow.up.circle", text: "To \(who) · \(size(done)) of \(size(sending.total))",
+                                 progress: .fraction(fraction), accessibilityValue: percent(fraction))]
+        }
+        if let receiving {
+            let who = String(receiving.sender.prefix(24))
+            let fraction = receiving.total == 0 ? 0 : min(1, Double(receiving.bytes) / Double(receiving.total))
+            return [LiveActivity("transfer", symbol: "arrow.down.circle", text: "From \(who) · \(size(receiving.bytes)) of \(size(receiving.total))",
+                                 progress: .fraction(fraction), accessibilityValue: percent(fraction))]
+        }
+        if let ended, ended.until > Date() {
+            return [LiveActivity("transfer", symbol: ended.symbol, text: String(ended.text.prefix(60)),
+                                 progress: ended.symbol == "checkmark.circle" ? .done : nil, lasts: ended.until.timeIntervalSinceNow)]
+        }
+        return []
     }
 
     private func screen(_ nearby: [Peer]) -> PageScreen {

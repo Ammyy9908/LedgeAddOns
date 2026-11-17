@@ -1,6 +1,6 @@
 {
     "id": "localsend",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "protocolVersion": 2,
     "name": "LocalSend",
     "summary": "Send files to devices nearby",
@@ -16,7 +16,8 @@
     "surfaces": [
         "share-target",
         "notch-page",
-        "settings-page"
+        "settings-page",
+        "activity"
     ],
     "kit": {
         "minAPI": "0.20.0"
