@@ -1,0 +1,25 @@
+{
+    "id": "agents",
+    "version": "0.1.0",
+    "protocolVersion": 2,
+    "name": "Agents",
+    "summary": "Your coding agents in the notch",
+    "description": "See what your Claude Code sessions are doing: the step each one is on beside the notch, and every session with the file it's editing and the lines it changed on a page in the notch. Allow or deny Claude Code's permission prompts from the notch. Connect it in Settings, which adds Ledge's hooks to Claude Code's settings. Everything stays on this Mac.",
+    "author": "Sumit",
+    "capabilities": [
+        "agent-hooks",
+        "questions"
+    ],
+    "surfaces": [
+        "notch-page",
+        "settings-page",
+        "activity"
+    ],
+    "kit": {
+        "minAPI": "0.21.0"
+    },
+    "executable": "Agents",
+    "icon": "Assets/Icon.png",
+    "category": "AI",
+    "keywords": ["claude", "claude code", "agent", "ai", "coding", "hooks"]
+}
