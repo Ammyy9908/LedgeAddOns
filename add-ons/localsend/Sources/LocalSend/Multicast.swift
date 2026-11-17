@@ -14,8 +14,9 @@ final class Multicast: @unchecked Sendable {
 
     /// `heard` gets each message and the address it came from.
     init(heard: @escaping @Sendable (DeviceInfo, String) -> Void) throws {
-        socket = Darwin.socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
+        let socket = Darwin.socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
         guard socket >= 0 else { throw Failure(description: "No UDP socket.") }
+        self.socket = socket
         var on: Int32 = 1
         setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, &on, socklen_t(MemoryLayout<Int32>.size))
         setsockopt(socket, SOL_SOCKET, SO_REUSEPORT, &on, socklen_t(MemoryLayout<Int32>.size))
@@ -34,7 +35,6 @@ final class Multicast: @unchecked Sendable {
         var loop: UInt8 = 0
         setsockopt(socket, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, socklen_t(MemoryLayout<UInt8>.size))
         let source = DispatchSource.makeReadSource(fileDescriptor: socket, queue: queue)
-        let socket = socket
         source.setEventHandler {
             var buffer = [UInt8](repeating: 0, count: 65_536)
             var from = sockaddr_in()
