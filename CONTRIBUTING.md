@@ -27,6 +27,18 @@ python3 scripts/validate.py             # the checks CI runs
 
 Then open a pull request against `main` and fill in the template.
 
+## The icon
+
+`Assets/Icon.png` is required: a square PNG, 1024 pixels, that the website, the catalog and every Ledge draw.
+
+`Assets/Icon.icon` is optional: the same icon made in Icon Composer (in Xcode 26 or later). The catalog build
+compiles it with `actool`, and a Ledge that supports it draws it in the icon style chosen in System Settings,
+Appearance, Icon & widget style: Default, Clear or Tinted, light or dark, as the Dock draws apps. Give each layer a
+`tinted` fill (plain white, at the strength you want) so Clear and Tinted read well, and preview all six in Icon
+Composer. The document must be self-contained: every image its `icon.json` names sits in its own `Assets/`.
+`Assets/Icon.car` is what the build makes from it; never commit one. Adding or changing either icon changes what
+ships, so it needs a new version.
+
 ## What an add-on folder holds
 
 ```
@@ -38,6 +50,7 @@ add-ons/<id>/
   Sources/          the add-on
   Tests/            its tests; required
   Assets/Icon.png   the icon
+  Assets/Icon.icon  optional: the icon as an Icon Composer document (see "The icon")
   Store/            screenshots (PNG) and the motion demo (MP4) that listing.json names
   CHANGELOG.md      newest version first
   README.md         what it does, how to set it up, what it can't do

@@ -20,7 +20,7 @@ ALLOWED_TOP = {"addon.json", "listing.json", "Package.swift", "Package.resolved"
 REQUIRED = ["addon.json", "Package.swift", "README.md", "CHANGELOG.md", "Assets/Icon.png"]
 # Never part of a submission, at any depth.
 REFUSED_PARTS = {".build", ".swiftpm", ".DS_Store", ".mcp.json", ".cursor", "AGENTS.md", "CLAUDE.md", "__pycache__"}
-REFUSED_SUFFIXES = {".ledgeaddon", ".binary", ".dylib", ".a", ".o", ".zip"}
+REFUSED_SUFFIXES = {".ledgeaddon", ".binary", ".dylib", ".a", ".o", ".zip", ".car"}
 # Store media have their own limits (see LISTING.md); every other file stays small.
 LIMITS = {".mp4": 32 * 1024 * 1024, ".png": 8 * 1024 * 1024}
 DEFAULT_LIMIT = 4 * 1024 * 1024
@@ -119,6 +119,45 @@ def requirements(manifest):
     return requires
 
 
+ICON_DOCUMENT = "Assets/Icon.icon"
+
+
+def check_icon_document(document, say):
+    """An Icon Composer document, optional beside Icon.png: Ledge draws it in the icon style the person chose.
+    It must be self-contained: a readable icon.json, at least one layer, and every image it names in Assets/."""
+    try:
+        icon = json.loads((document / "icon.json").read_text())
+    except (OSError, ValueError):
+        say(f"{ICON_DOCUMENT}/icon.json is missing or isn't JSON")
+        return
+    layers = [layer for group in icon.get("groups", []) for layer in group.get("layers", [])]
+    if not layers:
+        say(f"{ICON_DOCUMENT} has no layers")
+    for layer in layers:
+        name = layer.get("image-name")
+        if name and not (document / "Assets" / name).is_file():
+            say(f"{ICON_DOCUMENT} names {name}, which isn't in its Assets/")
+
+
+def compile_icon(package, destination):
+    """Compiles the add-on's Icon Composer document with actool, as Xcode does an app's icon, into the Assets.car
+    Ledge installs as Assets/Icon.car. Returns False when the add-on has none. Needs Xcode 26 or later."""
+    import tempfile
+    document = package / ICON_DOCUMENT
+    if not document.is_dir():
+        return False
+    with tempfile.TemporaryDirectory() as work:
+        subprocess.run(["xcrun", "actool", str(document), "--compile", work, "--app-icon", "Icon",
+                        "--platform", "macosx", "--minimum-deployment-target", "14.0",
+                        "--output-partial-info-plist", work + "/Info.plist"], check=True, stdout=subprocess.DEVNULL)
+        car = pathlib.Path(work) / "Assets.car"
+        assert car.is_file() and car.read_bytes().startswith(b"BOMStore"), f"actool made no Assets.car from {document}"
+        assert car.stat().st_size <= 4 * 1024 * 1024, f"{document} compiles to more than 4 MB"
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(car.read_bytes())
+    return True
+
+
 def check_folder(package, problems):
     addon_id = package.name
     say = lambda message: problems.append(f"{addon_id}: {message}")
@@ -144,6 +183,8 @@ def check_folder(package, problems):
         say("Sources/ is missing")
     if not any(name.startswith("Tests/") for name in tracked):
         say("Tests/ is missing: every add-on ships with tests")
+    if any(name.startswith(ICON_DOCUMENT + "/") for name in tracked):
+        check_icon_document(package / ICON_DOCUMENT, say)
     if "listing.json" not in tracked and addon_id not in NO_LISTING_YET:
         say("listing.json is missing (see LISTING.md)")
     if "addon.json" not in tracked:
