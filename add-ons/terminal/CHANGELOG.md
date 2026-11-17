@@ -2,6 +2,10 @@
 
 Newest version first. Every new `version` in addon.json needs an entry here.
 
+## 0.1.1
+
+- A new, colourful icon, drawn in your icon style (Default, Dark, Clear or Tinted) in Ledges that support it.
+
 ## 0.1.0
 
 - Your login shell on the notch's Terminal page, with vim, top and ssh, as you and with your access.
