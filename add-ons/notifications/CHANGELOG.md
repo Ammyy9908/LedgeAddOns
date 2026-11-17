@@ -2,6 +2,10 @@
 
 Newest version first. Every new `version` in addon.json needs an entry here.
 
+## 0.3.1
+
+- A new, colourful icon, drawn in your icon style (Default, Dark, Clear or Tinted) in Ledges that support it.
+
 ## 0.3.0
 
 - Its settings page comes from the add-on. Mirroring follows the add-on's own switch, and "Show message text" is

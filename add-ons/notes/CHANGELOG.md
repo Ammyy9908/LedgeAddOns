@@ -2,6 +2,10 @@
 
 Newest version first. Every new `version` in addon.json needs an entry here.
 
+## 0.6.1
+
+- A new, colourful icon, drawn in your icon style (Default, Dark, Clear or Tinted) in Ledges that support it.
+
 ## 0.6.0
 
 - AI apps can edit notes and move them to the Trash. Ledge asks for notch approval before every edit or deletion.

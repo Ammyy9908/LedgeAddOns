@@ -1,6 +1,6 @@
 {
   "id": "notifications",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "protocolVersion": 2,
   "name": "Notifications",
   "summary": "Mirror visible notification banners in your notch",

@@ -1,5 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <ellipse cx="430" cy="452" rx="34" ry="44" fill="#000"/>
-  <ellipse cx="594" cy="452" rx="34" ry="44" fill="#000"/>
-  <path d="M392 586 Q512 676 632 586" fill="none" stroke="#000" stroke-width="44" stroke-linecap="round"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024"><ellipse cx="432" cy="448" rx="42" ry="58" fill="#000"/><ellipse cx="592" cy="448" rx="42" ry="58" fill="#000"/><path d="M392 568 Q512 676 632 568" stroke="#000" stroke-width="44" stroke-linecap="round" fill="none"/></svg>
