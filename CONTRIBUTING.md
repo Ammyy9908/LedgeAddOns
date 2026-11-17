@@ -32,8 +32,8 @@ Then open a pull request against `main` and fill in the template.
 `Assets/Icon.png` is required: a square PNG, 1024 pixels, that the website, the catalog and every Ledge draw.
 
 `Assets/Icon.icon` is optional: the same icon made in Icon Composer (in Xcode 26 or later). The catalog build
-compiles it with `actool`, and a Ledge that supports it draws it in the icon style chosen in System Settings,
-Appearance, Icon & widget style: Default, Clear or Tinted, light or dark, as the Dock draws apps. Give each layer a
+compiles it with `actool`, and a Ledge that supports it draws it in the icon style chosen in Ledge's Settings,
+Theming, Add-on icons: Default, Dark, Clear or Tinted, light or dark, with macOS's own icon renderer. Give each layer a
 `tinted` fill (plain white, at the strength you want) so Clear and Tinted read well, and preview all six in Icon
 Composer. The document must be self-contained: every image its `icon.json` names sits in its own `Assets/`.
 `Assets/Icon.car` is what the build makes from it; never commit one. Adding or changing either icon changes what
