@@ -147,10 +147,15 @@ def compile_icon(package, destination):
     if not document.is_dir():
         return False
     with tempfile.TemporaryDirectory() as work:
-        result = subprocess.run(["xcrun", "actool", str(document), "--compile", work, "--app-icon", "Icon",
-                                 "--platform", "macosx", "--minimum-deployment-target", "14.0",
-                                 "--output-partial-info-plist", work + "/Info.plist"], capture_output=True, text=True)
         car = pathlib.Path(work) / "Assets.car"
+        # actool's helper process can crash on a busy runner, so it gets a second try.
+        for attempt in range(2):
+            result = subprocess.run(["xcrun", "actool", str(document), "--compile", work, "--app-icon", "Icon",
+                                     "--platform", "macosx", "--minimum-deployment-target", "14.0",
+                                     "--output-partial-info-plist", work + "/Info.plist"], capture_output=True, text=True)
+            if result.returncode == 0 and car.is_file():
+                break
+            print(f"actool made no Assets.car from {document} (attempt {attempt + 1})", file=sys.stderr)
         # actool can exit 0 having made nothing, as an Xcode older than 26 does with a .icon; say what it said.
         assert result.returncode == 0 and car.is_file() and car.read_bytes().startswith(b"BOMStore"), \
             f"actool made no Assets.car from {document} (Xcode 26 or later needed):\n{result.stdout}{result.stderr}"
