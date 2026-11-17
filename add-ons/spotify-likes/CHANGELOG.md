@@ -2,6 +2,10 @@
 
 Newest version first. Every new `version` in addon.json needs an entry here.
 
+## 2.3.3
+
+- A new icon: the Spotify logo, drawn in your icon style in Ledges that support it.
+
 ## 2.3.2
 
 - Capture the source song URI and position before transferring.

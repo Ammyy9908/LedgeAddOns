@@ -1,6 +1,6 @@
 {
   "id": "apple-music-queue",
-  "version": "0.15.0",
+  "version": "0.15.1",
   "protocolVersion": 2,
   "name": "Apple Music Controls",
   "summary": "Apple Music player controls and AI tools",

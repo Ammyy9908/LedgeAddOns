@@ -2,6 +2,10 @@
 
 Newest version first. Every new `version` in addon.json needs an entry here.
 
+## 0.15.1
+
+- A new icon: Apple Music's note, drawn in your icon style in Ledges that support it.
+
 ## 0.15.0
 
 - Removes AI song search and direct playback tools. Song search and starting playback remain in Apple Music; queue, favorite, shuffle, and playlist controls remain available.
