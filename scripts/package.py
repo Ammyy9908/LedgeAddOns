@@ -7,6 +7,9 @@ The result is for your own Mac: built for its architecture and ad-hoc signed. Th
 """
 import json, pathlib, shutil, subprocess, sys
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import validate  # noqa: E402
+
 root = pathlib.Path(__file__).resolve().parents[1]
 if len(sys.argv) < 2:
     raise SystemExit(__doc__)
@@ -25,5 +28,6 @@ shutil.copyfile(bin_dir / name, bundle / name)
 (bundle / name).chmod(0o755)
 shutil.copyfile(package / "addon.json", bundle / "addon.json")
 shutil.copyfile(package / "Assets/Icon.png", bundle / "Assets/Icon.png")
+validate.compile_icon(package, bundle / "Assets/Icon.car")
 subprocess.run(["codesign", "--force", "--sign", "-", str(bundle / name)], check=True)
 print(bundle)

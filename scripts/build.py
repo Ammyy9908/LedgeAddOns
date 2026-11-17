@@ -58,11 +58,15 @@ for addon_id, decision in decisions.items():
     assert re.fullmatch(r"[A-Za-z0-9_-]+", executable)
     assert manifest["icon"] == "Assets/Icon.png"
     files = {}
+    styled_icon = None
     names = {"executable": addon_id + ".binary", "manifest": addon_id + ".manifest.json", "icon": addon_id + ".icon.png"}
     if decision == "reuse":
         for key, name in names.items():
             fetch_published(published_entries[addon_id]["files"][key], dist / name)
             files[key] = record(dist / name)
+        if "styledIcon" in published_entries[addon_id]:
+            fetch_published(published_entries[addon_id]["styledIcon"], dist / (addon_id + ".icon.car"))
+            styled_icon = record(dist / (addon_id + ".icon.car"))
     else:
         subprocess.run(["swift", "test", "--package-path", str(package)], check=True)
         command = ["swift", "build", "--package-path", str(package), "-c", "release",
@@ -78,6 +82,10 @@ for addon_id, decision in decisions.items():
                 destination.chmod(0o755)
                 subprocess.run(["codesign", "--force", "--sign", "-", str(destination)], check=True)
             files[key] = record(destination)
+        # The Icon Composer icon, compiled, for Ledges that draw it in the person's icon style. Kept out of
+        # `files`, which older Ledges require to be exactly these three.
+        if validate.compile_icon(package, dist / (addon_id + ".icon.car")):
+            styled_icon = record(dist / (addon_id + ".icon.car"))
     # Store listings can change without a new version, so they always come from the folder as it is now.
     listing_path = package / "listing.json"
     listing = json.loads(listing_path.read_text()) if listing_path.exists() else None
@@ -107,7 +115,8 @@ for addon_id, decision in decisions.items():
     entries.append({"id": addon_id, "name": manifest["name"], "summary": manifest["summary"],
                     "version": manifest["version"], "architectures": ["arm64", "x86_64"],
                     "requires": validate.requirements(manifest),
-                    "files": files, **({"listing": listing} if listing is not None else {})})
+                    "files": files, **({"styledIcon": styled_icon} if styled_icon else {}),
+                    **({"listing": listing} if listing is not None else {})})
 (dist / "catalog.json").write_text(json.dumps({"schemaVersion": 1, "sourceCommit": commit,
                                              "entries": entries}, indent=2) + "\n")
 built = sum(1 for d in decisions.values() if d == "build")
