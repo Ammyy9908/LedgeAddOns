@@ -3,5 +3,8 @@
   "category": "Music",
   "availability": "Free · needs a Ledge with lyrics from add-ons (0.1.0 Beta 6 or later)",
   "description": "Lyrics puts the words of the song that's playing in Ledge: press L in the notch's player or the lyrics button in the menu bar player, and they scroll in time with the music, the current line lit. With the lock screen player on, they show under it while the Mac is locked (Settings, Lock Screen, Lyrics). It works with any player Ledge shows, such as Apple Music, Spotify or a browser. Lyrics come from LRCLIB (lrclib.net), a free, open database; when a song only has untimed lyrics, they show as plain text. Only the song's title and artist are sent to LRCLIB, nothing else.",
-  "feedbackURL": "https://github.com/Ammyy9908/LedgeAddOns/issues/new"
+  "feedbackURL": "https://github.com/Ammyy9908/LedgeAddOns/issues/new",
+  "screenshots": [
+    "Store/Player.png"
+  ]
 }
