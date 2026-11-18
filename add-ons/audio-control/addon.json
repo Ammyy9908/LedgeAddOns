@@ -1,0 +1,28 @@
+{
+    "id": "audio-control",
+    "version": "0.1.0",
+    "protocolVersion": 2,
+    "name": "Audio Control",
+    "summary": "A volume slider for each app",
+    "description": "Set how loud each app plays from the notch, on the add-on's page or a Home widget: turn a video call down under your music, or quiet one browser tab's app without touching the rest. Each app playing sound is a row with its icon, filled to its level. Send an app to its own speakers or headphones, switch to your preferred devices as they connect, and mute every microphone at once. Ledge passes the sound of each app you turn down through itself and plays it quieter; nothing is recorded or leaves this Mac.",
+    "author": "Sumit",
+    "capabilities": [
+        "audio-capture",
+        "audio-devices"
+    ],
+    "surfaces": [
+        "notch-page",
+        "widget",
+        "settings-page",
+        "shortcut",
+        "activity"
+    ],
+    "kit": {
+        "minAPI": "0.22.0"
+    },
+    "minMacOS": "14.2",
+    "executable": "AudioControl",
+    "icon": "Assets/Icon.png",
+    "category": "System",
+    "keywords": ["volume", "audio", "mixer", "sound", "app volume", "per-app volume"]
+}

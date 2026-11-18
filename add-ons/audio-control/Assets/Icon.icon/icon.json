@@ -1,0 +1,104 @@
+{
+  "fill-specializations": [
+    {
+      "value": {
+        "automatic-gradient": "srgb:0.20000,0.21176,0.24314,1.00000"
+      }
+    },
+    {
+      "appearance": "dark",
+      "value": {
+        "automatic-gradient": "srgb:0.10980,0.10980,0.11765,1.00000"
+      }
+    }
+  ],
+  "groups": [
+    {
+      "layers": [
+        {
+          "image-name": "pointer.svg",
+          "name": "pointer",
+          "glass": false,
+          "fill-specializations": [
+            {
+              "value": {
+                "solid": "srgb:0.16078,0.45098,0.94902,1.00000"
+              }
+            },
+            {
+              "appearance": "tinted",
+              "value": {
+                "solid": "srgb:0.00000,0.00000,0.00000,0.55000"
+              }
+            }
+          ]
+        },
+        {
+          "image-name": "knob.svg",
+          "name": "knob",
+          "glass": true,
+          "fill-specializations": [
+            {
+              "value": {
+                "solid": "srgb:0.90196,0.91765,0.94118,1.00000"
+              }
+            },
+            {
+              "appearance": "tinted",
+              "value": {
+                "solid": "srgb:1.00000,1.00000,1.00000,1.00000"
+              }
+            }
+          ]
+        },
+        {
+          "image-name": "lit.svg",
+          "name": "lit",
+          "glass": false,
+          "fill-specializations": [
+            {
+              "value": {
+                "automatic-gradient": "srgb:0.30196,0.78431,0.88235,1.00000"
+              }
+            },
+            {
+              "appearance": "tinted",
+              "value": {
+                "solid": "srgb:1.00000,1.00000,1.00000,1.00000"
+              }
+            }
+          ]
+        },
+        {
+          "image-name": "unlit.svg",
+          "name": "unlit",
+          "glass": false,
+          "fill-specializations": [
+            {
+              "value": {
+                "solid": "srgb:1.00000,1.00000,1.00000,0.16000"
+              }
+            },
+            {
+              "appearance": "tinted",
+              "value": {
+                "solid": "srgb:1.00000,1.00000,1.00000,0.30000"
+              }
+            }
+          ]
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.2
+      }
+    }
+  ],
+  "supported-platforms": {
+    "squares": "shared"
+  }
+}
