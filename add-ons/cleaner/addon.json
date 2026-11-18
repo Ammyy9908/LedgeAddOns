@@ -1,0 +1,30 @@
+{
+    "id": "cleaner",
+    "version": "0.1.0",
+    "protocolVersion": 2,
+    "name": "Cleaner",
+    "summary": "Uninstall apps, leftovers and all",
+    "description": "Uninstall an app together with the files it left in your Library, and clear app caches, logs and developer data your Mac can rebuild. Every item is listed with its size and place first, nothing moves until you say so, and everything goes to the Trash, so you can put it back. Optional scheduled cleaning keeps caches and logs in check.",
+    "author": "Ledge",
+    "capabilities": [
+        "shared-files"
+    ],
+    "surfaces": [
+        "notch-page",
+        "share-target",
+        "settings-page"
+    ],
+    "kit": {
+        "minAPI": "0.20.0"
+    },
+    "executable": "Cleaner",
+    "icon": "Assets/Icon.png",
+    "category": "System",
+    "creator": {
+        "name": "Ledge"
+    },
+    "keywords": ["cleaner", "uninstall", "uninstaller", "caches", "storage", "disk space", "leftovers"],
+    "source": {
+        "repository": "https://github.com/Ammyy9908/LedgeAddOns/tree/main/add-ons/cleaner"
+    }
+}
