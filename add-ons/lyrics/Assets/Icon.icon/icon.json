@@ -1,0 +1,34 @@
+{
+  "fill-specializations": [
+    { "value": { "automatic-gradient": "srgb:1.00000,0.49804,0.25098,1.00000" } },
+    { "appearance": "dark", "value": { "automatic-gradient": "srgb:0.85098,0.27451,0.12157,1.00000" } }
+  ],
+  "groups": [
+    {
+      "layers": [
+        {
+          "image-name": "lines.svg",
+          "name": "lines",
+          "glass": false,
+          "fill-specializations": [
+            { "value": { "solid": "srgb:1.00000,0.49804,0.25098,1.00000" } },
+            { "appearance": "dark", "value": { "solid": "srgb:0.85098,0.27451,0.12157,1.00000" } },
+            { "appearance": "tinted", "value": { "solid": "srgb:0.00000,0.00000,0.00000,0.60000" } }
+          ]
+        },
+        {
+          "image-name": "bubble.svg",
+          "name": "bubble",
+          "glass": true,
+          "fill-specializations": [
+            { "value": { "solid": "srgb:1.00000,1.00000,1.00000,1.00000" } },
+            { "appearance": "tinted", "value": { "solid": "srgb:1.00000,1.00000,1.00000,1.00000" } }
+          ]
+        }
+      ],
+      "shadow": { "kind": "neutral", "opacity": 0.4 },
+      "translucency": { "enabled": true, "value": 0.2 }
+    }
+  ],
+  "supported-platforms": { "squares": "shared" }
+}

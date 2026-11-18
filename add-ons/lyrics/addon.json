@@ -1,0 +1,26 @@
+{
+    "id": "lyrics",
+    "version": "0.1.0",
+    "protocolVersion": 2,
+    "name": "Lyrics",
+    "summary": "Timed lyrics for the song that's playing",
+    "description": "Shows the words of the song that's playing in Ledge's players and on the lock screen, line by line and in time with the music. Lyrics come from LRCLIB, a free, open lyrics database; only the song's title and artist are sent to it.",
+    "author": "Ledge",
+    "capabilities": [],
+    "surfaces": [
+        "lyrics"
+    ],
+    "kit": {
+        "minAPI": "0.22.0"
+    },
+    "executable": "Lyrics",
+    "icon": "Assets/Icon.png",
+    "category": "Media",
+    "creator": {
+        "name": "Ledge"
+    },
+    "keywords": ["lyrics", "karaoke", "words", "music", "song", "lrc"],
+    "source": {
+        "repository": "https://github.com/Ammyy9908/LedgeAddOns/tree/main/add-ons/lyrics"
+    }
+}
