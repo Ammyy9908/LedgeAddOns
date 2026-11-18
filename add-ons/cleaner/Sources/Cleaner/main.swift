@@ -130,6 +130,7 @@ actor Cleaner {
         }
         app = picked
         screen = .review
+        notice = nil
         busy = "Looking for \(picked.name)’s files…"
         items = []
         show()
@@ -195,7 +196,8 @@ actor Cleaner {
 
     private func finish(_ result: (moved: [Trash.Moved], failed: [URL]), bytes: Int64) {
         lastMoved = result.moved
-        let size = Sizes.text(bytes)
+        // Items that stayed are still in place, so their size is still measurable.
+        let size = Sizes.text(max(0, bytes - result.failed.reduce(0) { $0 + (Sizes.of($1) ?? 0) }))
         let count = result.moved.count
         notice = "Moved \(count) \(count == 1 ? "item" : "items") to the Trash · \(size)"
             + (result.failed.isEmpty ? "" : " · \(result.failed.count) stayed")
