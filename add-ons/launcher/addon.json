@@ -1,6 +1,6 @@
 {
     "id": "launcher",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "protocolVersion": 2,
     "name": "Launcher",
     "summary": "Open apps, settings and files, and get quick answers, from one search",

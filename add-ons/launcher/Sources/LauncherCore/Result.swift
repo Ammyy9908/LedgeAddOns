@@ -33,10 +33,15 @@ public struct LauncherResult: Codable, Sendable, Equatable {
     }
 }
 
-/// What Ledge sends as the person types.
+/// What Ledge sends as the person types. `scope` is the category they picked, "apps", "files" or "settings", or nil
+/// to search everything. Ledge before 0.1.0 Beta 8 sends none.
 public struct LauncherQuery: Codable, Sendable {
     public var query: String
-    public init(query: String) { self.query = query }
+    public var scope: String?
+    public init(query: String, scope: String? = nil) {
+        self.query = query
+        self.scope = scope
+    }
 }
 
 /// An AI's answer to a `launcher.ask` request.
