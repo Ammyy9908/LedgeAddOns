@@ -81,6 +81,14 @@ public enum Launcher {
             .trimmingCharacters(in: .whitespaces)
     }
 
+    /// The row that asks `assistant` the query, when one is set up.
+    public static func askRow(_ query: String, assistant: String) -> LauncherResult? {
+        let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard query.count >= 2 else { return nil }
+        return LauncherResult(id: "ask", title: "Ask \(assistant) “\(query)”", subtitle: "Answers here, with your key",
+                              kind: "Ask AI", symbol: "sparkles", ask: query)
+    }
+
     /// The last row: the query, searched on the web.
     public static func webSearch(_ query: String) -> LauncherResult? {
         let query = query.trimmingCharacters(in: .whitespacesAndNewlines)

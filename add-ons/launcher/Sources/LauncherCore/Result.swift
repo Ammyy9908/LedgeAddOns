@@ -16,9 +16,11 @@ public struct LauncherResult: Codable, Sendable, Equatable {
     public var open: String?
     /// Text Copy Answer puts on the clipboard.
     public var copy: String?
+    /// A question for the AI: choosing the row sends it back as a `launcher.ask` request and shows the answer.
+    public var ask: String?
 
     public init(id: String, title: String, subtitle: String? = nil, kind: String, symbol: String? = nil,
-                iconPath: String? = nil, open: String? = nil, copy: String? = nil) {
+                iconPath: String? = nil, open: String? = nil, copy: String? = nil, ask: String? = nil) {
         self.id = id
         self.title = title
         self.subtitle = subtitle
@@ -27,6 +29,7 @@ public struct LauncherResult: Codable, Sendable, Equatable {
         self.iconPath = iconPath
         self.open = open
         self.copy = copy
+        self.ask = ask
     }
 }
 
@@ -34,4 +37,15 @@ public struct LauncherResult: Codable, Sendable, Equatable {
 public struct LauncherQuery: Codable, Sendable {
     public var query: String
     public init(query: String) { self.query = query }
+}
+
+/// An AI's answer to a `launcher.ask` request.
+public struct LauncherAnswer: Codable, Sendable, Equatable {
+    public var text: String
+    /// Who answered, like "Claude".
+    public var from: String
+    public init(text: String, from: String) {
+        self.text = text
+        self.from = from
+    }
 }

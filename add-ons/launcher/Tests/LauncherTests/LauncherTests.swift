@@ -103,3 +103,48 @@ import Testing
         #expect(Launcher.webSearch("a&b c")?.open == "https://www.google.com/search?q=a%26b%20c")
     }
 }
+
+@Suite struct AssistantTests {
+    private func body(_ request: URLRequest) -> [String: Any] {
+        (try? JSONSerialization.jsonObject(with: request.httpBody ?? Data()) as? [String: Any]) ?? [:]
+    }
+
+    @Test func asksClaude() throws {
+        let request = try Assistant.claude.request("2+2?", key: "k", model: "")
+        #expect(request.url?.absoluteString == "https://api.anthropic.com/v1/messages")
+        #expect(request.value(forHTTPHeaderField: "x-api-key") == "k")
+        #expect(request.value(forHTTPHeaderField: "anthropic-version") == "2026-10-21")
+        #expect(body(request)["model"] as? String == "claude-opus-5-5")
+        #expect(body(request)["temperature"] == nil)
+        let reply = #"{"stop_reason":"end_turn","content":[{"type":"thinking","thinking":""},{"type":"text","text":" 4 "}]}"#
+        #expect(try Assistant.claude.answer(from: Data(reply.utf8)) == "4")
+        #expect(throws: AssistantError("Claude declined to answer that.")) {
+            try Assistant.claude.answer(from: Data(#"{"stop_reason":"refusal","content":[]}"#.utf8))
+        }
+    }
+
+    @Test func asksOpenAIAndGemini() throws {
+        let openAI = try Assistant.openAI.request("hi", key: "k", model: "gpt-x")
+        #expect(openAI.url?.absoluteString == "https://api.openai.com/v1/chat/completions")
+        #expect(openAI.value(forHTTPHeaderField: "Authorization") == "Bearer k")
+        #expect(try Assistant.openAI.answer(from: Data(#"{"choices":[{"message":{"content":"hello"}}]}"#.utf8)) == "hello")
+        let gemini = try Assistant.gemini.request("hi", key: "k", model: "")
+        #expect(gemini.url?.absoluteString == "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent")
+        #expect(gemini.value(forHTTPHeaderField: "x-goog-api-key") == "k")
+        #expect(try Assistant.gemini.answer(from: Data(#"{"candidates":[{"content":{"parts":[{"text":"a"},{"text":"b"}]}}]}"#.utf8)) == "ab")
+    }
+
+    @Test func keepsKeysSafe() {
+        // No key over plain http to another machine, no missing key, no odd model names in the URL.
+        #expect(throws: AssistantError.self) { try Assistant.compatible(baseURL: "http://example.com/v1").request("q", key: "k", model: "m") }
+        #expect((try? Assistant.compatible(baseURL: "http://localhost:11434/v1").request("q", key: "", model: "llama3")) != nil)
+        #expect(throws: AssistantError("Add your Claude key in Settings.")) { try Assistant.claude.request("q", key: "", model: "") }
+        #expect(throws: AssistantError.self) { try Assistant.gemini.request("q", key: "k", model: "x?key=y") }
+        #expect(Assistant.claude.failure(status: 401).message == "Claude didn't accept the key. Check it in Settings.")
+    }
+
+    @Test func askRowCarriesTheQuestion() {
+        #expect(Launcher.askRow(" capital of peru ", assistant: "Claude")?.ask == "capital of peru")
+        #expect(Launcher.askRow("a", assistant: "Claude") == nil)
+    }
+}
