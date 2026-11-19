@@ -1,0 +1,27 @@
+{
+    "id": "launcher",
+    "version": "0.1.0",
+    "protocolVersion": 2,
+    "name": "Launcher",
+    "summary": "Open apps, settings and files, and get quick answers, from one search",
+    "description": "Fills Ledge's launcher: type to open an app, a page of System Settings or a file in your home folder, or get an answer straight away, a sum, a tip, a unit conversion or the time in another city. Searching runs on this Mac. With your own API key for Claude, ChatGPT, Gemini or any OpenAI-compatible server, an Ask AI row answers questions in the launcher; a question is sent only when you choose that row.",
+    "author": "Ledge",
+    "capabilities": [],
+    "surfaces": [
+        "launcher",
+        "settings-page"
+    ],
+    "kit": {
+        "minAPI": "0.22.0"
+    },
+    "executable": "Launcher",
+    "icon": "Assets/Icon.png",
+    "category": "Productivity",
+    "creator": {
+        "name": "Ledge"
+    },
+    "keywords": ["launcher", "spotlight", "search", "apps", "calculator", "convert", "time zone", "settings", "files", "ai", "claude", "chatgpt", "gemini"],
+    "source": {
+        "repository": "https://github.com/Ammyy9908/LedgeAddOns/tree/main/add-ons/launcher"
+    }
+}
