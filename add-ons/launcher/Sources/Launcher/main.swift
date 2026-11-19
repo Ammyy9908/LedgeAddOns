@@ -69,39 +69,64 @@ actor Index {
     }
 }
 
-/// Files in the home folder whose names hold `query`, from Spotlight's index, closest names first.
-func files(matching query: String) async -> [LauncherResult] {
-    let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard query.count >= 3 else { return [] }
+/// Paths in the home folder that Spotlight's index finds with `arguments`, each with when it was last opened. A broad
+/// search can list thousands; a second is enough for the first ones.
+func spotlight(_ arguments: [String]) async -> [(path: String, used: Date?)] {
     let home = FileManager.default.homeDirectoryForCurrentUser.path
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/usr/bin/mdfind")
-    process.arguments = ["-onlyin", home, "-name", query]
+    process.arguments = ["-onlyin", home, "-attr", "kMDItemLastUsedDate"] + arguments
     let pipe = Pipe()
     process.standardOutput = pipe
     process.standardError = FileHandle.nullDevice
     guard (try? process.run()) != nil else { return [] }
-    // A broad name can list thousands; a second is enough for the first ones.
     let stop = DispatchWorkItem { if process.isRunning { process.terminate() } }
     DispatchQueue.global().asyncAfter(deadline: .now() + 1, execute: stop)
     let output = await Task.detached { pipe.fileHandleForReading.readDataToEndOfFile() }.value
     stop.cancel()
-    let lowered = query.lowercased()
-    let paths = String(decoding: output, as: UTF8.self).split(separator: "\n").map(String.init)
-        .filter { !$0.contains("/Library/") && !$0.contains("/.") && !$0.contains(".app/") && !$0.contains("/node_modules/") }
-        .sorted { a, b in
-            let (x, y) = ((a as NSString).lastPathComponent.lowercased(), (b as NSString).lastPathComponent.lowercased())
-            if x.hasPrefix(lowered) != y.hasPrefix(lowered) { return x.hasPrefix(lowered) }
-            return a.count < b.count
-        }
-    return paths.prefix(5).map { path in
-        var isFolder: ObjCBool = false
-        FileManager.default.fileExists(atPath: path, isDirectory: &isFolder)
-        let parent = ((path as NSString).deletingLastPathComponent as NSString).abbreviatingWithTildeInPath
-        return LauncherResult(id: "file:\(path)", title: (path as NSString).lastPathComponent, subtitle: parent,
-                              kind: isFolder.boolValue ? "Folder" : "File", iconPath: path,
-                              open: URL(fileURLWithPath: path).absoluteString, copy: path)
+    let dates = DateFormatter()
+    dates.locale = Locale(identifier: "en_US_POSIX")
+    dates.dateFormat = "yyyy-MM-dd HH:mm:ss Z"
+    return String(decoding: output, as: UTF8.self).split(separator: "\n").compactMap { line in
+        let parts = line.components(separatedBy: "   kMDItemLastUsedDate = ")
+        let path = parts[0]
+        guard !path.contains("/Library/"), !path.contains("/."), !path.contains(".app/"), !path.contains("/node_modules/") else { return nil }
+        return (path, parts.count > 1 ? dates.date(from: parts[1]) : nil)
     }
+}
+
+func fileRow(_ path: String, kind: String? = nil) -> LauncherResult {
+    var isFolder: ObjCBool = false
+    FileManager.default.fileExists(atPath: path, isDirectory: &isFolder)
+    let parent = ((path as NSString).deletingLastPathComponent as NSString).abbreviatingWithTildeInPath
+    return LauncherResult(id: "file:\(path)", title: (path as NSString).lastPathComponent, subtitle: parent,
+                          kind: kind ?? (isFolder.boolValue ? "Folder" : "File"), iconPath: path,
+                          open: URL(fileURLWithPath: path).absoluteString, copy: path)
+}
+
+/// Files in the home folder whose names hold `query`, closest names first: 5 among everything else, or 30 when the
+/// person picked Files, then with when each was last opened on the right.
+func files(matching query: String, limit: Int = 5, showingWhen: Bool = false) async -> [LauncherResult] {
+    let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard query.count >= (showingWhen ? 2 : 3) else { return [] }
+    let lowered = query.lowercased()
+    let found = await spotlight(["-name", query]).sorted { a, b in
+        let (x, y) = ((a.path as NSString).lastPathComponent.lowercased(), (b.path as NSString).lastPathComponent.lowercased())
+        if x.hasPrefix(lowered) != y.hasPrefix(lowered) { return x.hasPrefix(lowered) }
+        if showingWhen, a.used != b.used { return (a.used ?? .distantPast) > (b.used ?? .distantPast) }
+        return a.path.count < b.path.count
+    }
+    return found.prefix(limit).map { file in
+        fileRow(file.path, kind: showingWhen ? file.used.map { Launcher.ago($0) } : nil)
+    }
+}
+
+/// The files opened in the last two weeks, newest first, for Files before the person types.
+func recentFiles() async -> [LauncherResult] {
+    await spotlight(["kMDItemLastUsedDate >= $time.today(-14) && kMDItemContentType != public.folder"])
+        .filter { $0.used != nil }
+        .sorted { $0.used! > $1.used! }
+        .prefix(30).map { fileRow($0.path, kind: Launcher.ago($0.used!)) }
 }
 
 /// Ask AI: which service answers, with the person's own key. The choice and models are plain settings; the keys
@@ -208,6 +233,14 @@ handlers.activate = { await ai.start() }
 handlers.onEvent = { event in await ai.handle(event) }
 handlers.on("launcher") { (request: LauncherQuery) async throws -> [LauncherResult] in
     let (apps, settings) = await index.entries()
+    switch request.scope {
+    case "apps": return Launcher.search(request.query, in: apps)
+    case "settings": return Launcher.search(request.query, in: settings)
+    case "files":
+        let query = request.query.trimmingCharacters(in: .whitespacesAndNewlines)
+        return query.isEmpty ? await recentFiles() : await files(matching: query, limit: 30, showingWhen: true)
+    default: break
+    }
     async let found = files(matching: request.query)
     let known = Launcher.search(request.query, apps: apps, settings: settings)
     let asking = await ai.ready.flatMap { Launcher.askRow(request.query, assistant: $0.name) }

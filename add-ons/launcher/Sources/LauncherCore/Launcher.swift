@@ -24,6 +24,28 @@ public enum Launcher {
         return answers(query, now: now, here: here) + found.prefix(8).map(\.0)
     }
 
+    /// Within one category, the person picked in the launcher: every app or settings page, by name, before they type,
+    /// then the closest matches. Up to 30.
+    public static func search(_ query: String, in entries: [Entry]) -> [LauncherResult] {
+        let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else {
+            return entries.map(\.result).sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }.prefix(30).map { $0 }
+        }
+        return entries.compactMap { entry in score(entry.result.title, keywords: entry.keywords, query: query).map { (entry.result, $0) } }
+            .sorted { $0.1 != $1.1 ? $0.1 > $1.1 : $0.0.title.count < $1.0.title.count }
+            .prefix(30).map(\.0)
+    }
+
+    /// How long ago, the way Finder says it: "Just now", "6 min. ago", "3 hr. ago", "Yesterday", "4 days ago".
+    public static func ago(_ date: Date, now: Date = Date()) -> String {
+        let seconds = max(0, now.timeIntervalSince(date))
+        if seconds < 60 { return "Just now" }
+        if seconds < 3600 { return "\(Int(seconds / 60)) min. ago" }
+        if seconds < 86_400 { return "\(Int(seconds / 3600)) hr. ago" }
+        let days = Int(seconds / 86_400)
+        return days == 1 ? "Yesterday" : days < 30 ? "\(days) days ago" : date.formatted(.dateTime.day().month(.abbreviated))
+    }
+
     /// A sum, a conversion or a time, when `query` asks for one.
     public static func answers(_ query: String, now: Date = Date(), here: TimeZone = .current) -> [LauncherResult] {
         if let percent = percentOf(query) { return [percent] }

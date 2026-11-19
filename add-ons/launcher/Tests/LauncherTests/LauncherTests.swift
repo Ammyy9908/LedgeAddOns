@@ -99,6 +99,22 @@ import Testing
         #expect(results.first?.kind == "Calculator")
     }
 
+    @Test func searchesOneCategory() {
+        let apps = ["Notion", "Calendar", "Notes"].map(app)
+        #expect(Launcher.search("", in: apps).map(\.title) == ["Calendar", "Notes", "Notion"])
+        #expect(Launcher.search("not", in: apps).map(\.title) == ["Notes", "Notion"])
+        #expect(Launcher.search("2+2", in: apps).isEmpty)  // answers belong to the whole search
+    }
+
+    @Test func saysHowLongAgo() {
+        let now = Date(timeIntervalSince1970: 1_000_000)
+        #expect(Launcher.ago(now.addingTimeInterval(-20), now: now) == "Just now")
+        #expect(Launcher.ago(now.addingTimeInterval(-360), now: now) == "6 min. ago")
+        #expect(Launcher.ago(now.addingTimeInterval(-3 * 3600 - 5), now: now) == "3 hr. ago")
+        #expect(Launcher.ago(now.addingTimeInterval(-30 * 3600), now: now) == "Yesterday")
+        #expect(Launcher.ago(now.addingTimeInterval(-4 * 86_400), now: now) == "4 days ago")
+    }
+
     @Test func webSearchIsEncoded() {
         #expect(Launcher.webSearch("a&b c")?.open == "https://www.google.com/search?q=a%26b%20c")
     }
