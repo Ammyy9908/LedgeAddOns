@@ -1,0 +1,26 @@
+{
+    "id": "launcher",
+    "version": "0.1.0",
+    "protocolVersion": 2,
+    "name": "Launcher",
+    "summary": "Open apps, settings and files, and get quick answers, from one search",
+    "description": "Fills Ledge's launcher: type to open an app, a page of System Settings or a file in your home folder, or get an answer straight away, a sum, a tip, a unit conversion or the time in another city. Everything runs on this Mac; only a web search you choose opens your browser.",
+    "author": "Ledge",
+    "capabilities": [],
+    "surfaces": [
+        "launcher"
+    ],
+    "kit": {
+        "minAPI": "0.22.0"
+    },
+    "executable": "Launcher",
+    "icon": "Assets/Icon.png",
+    "category": "Productivity",
+    "creator": {
+        "name": "Ledge"
+    },
+    "keywords": ["launcher", "spotlight", "search", "apps", "calculator", "convert", "time zone", "settings", "files"],
+    "source": {
+        "repository": "https://github.com/Ammyy9908/LedgeAddOns/tree/main/add-ons/launcher"
+    }
+}
