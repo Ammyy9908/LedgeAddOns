@@ -14,7 +14,7 @@ public enum TimeZones {
         let text = text.lowercased().trimmingCharacters(in: .whitespaces)
         let clock = #"(\d{1,2}(?::\d{2})?\s*(?:am|pm)?|noon|midnight)"#
         // "time in tokyo", "tokyo time"
-        if let match = text.firstMatch(#"^(?:what\s+)?time\s+(?:is\s+it\s+)?(?:in|at)\s+(.+)$"#) ?? text.firstMatch(#"^(.+?)\s+time$"#),
+        if let match = text.firstMatch(#"^(?:what\s+)?(?:time|now)\s+(?:is\s+it\s+)?(?:in|at)\s+(.+)$"#) ?? text.firstMatch(#"^(.+?)\s+(?:time|now)$"#),
            let place = place(match[1]) {
             return show(now, in: place)
         }
@@ -22,12 +22,17 @@ public enum TimeZones {
         if let match = text.firstMatch("^\(clock)\\s+(?:in\\s+)?(.+?)\\s+(?:in|to)\\s+(.+)$"),
            let from = place(match[2]), let to = place(match[3]),
            let moment = moment(match[1], in: from.zone, now: now) {
-            return show(moment, in: to)
+            return show(moment, in: to, from: from)
         }
         // "3pm in tokyo": this Mac's 3pm, there.
         if let match = text.firstMatch("^\(clock)\\s+(?:in|to)\\s+(.+)$"), let to = place(match[2]),
            let moment = moment(match[1], in: here, now: now) {
-            return show(moment, in: to)
+            return show(moment, in: to, from: Place(name: "here", zone: here))
+        }
+        // "3pm est", "9am london": that time there, here.
+        if let match = text.firstMatch("^\(clock)\\s+(.+)$"), let from = place(match[2]),
+           let moment = moment(match[1], in: from.zone, now: now) {
+            return show(moment, in: Place(name: "Here", zone: here), from: from)
         }
         return nil
     }
@@ -95,7 +100,8 @@ public enum TimeZones {
         return calendar.date(bySettingHour: hour, minute: minute, second: 0, of: now)
     }
 
-    private static func show(_ moment: Date, in place: Place) -> Answer {
+    /// `from`, when given, says whose time it started as: "… · 3:00 PM in London".
+    private static func show(_ moment: Date, in place: Place, from: Place? = nil) -> Answer {
         let time = DateFormatter()
         time.locale = Locale(identifier: "en_US_POSIX")
         time.timeZone = place.zone
@@ -108,6 +114,12 @@ public enum TimeZones {
         let hours = seconds / 3600
         let minutes = abs(seconds % 3600) / 60
         let offset = "UTC" + (seconds == 0 ? "" : (seconds > 0 ? "+" : "−") + "\(abs(hours))" + (minutes > 0 ? ":\(String(format: "%02d", minutes))" : ""))
-        return Answer(time: time.string(from: moment), detail: "\(place.name) · \(day.string(from: moment)) · \(offset)")
+        let shown = time.string(from: moment)
+        var detail = "\(place.name) · \(day.string(from: moment)) · \(offset)"
+        if let from {
+            time.timeZone = from.zone
+            detail += " · \(time.string(from: moment)) \(from.name == "here" ? "here" : "in " + from.name)"
+        }
+        return Answer(time: shown, detail: detail)
     }
 }

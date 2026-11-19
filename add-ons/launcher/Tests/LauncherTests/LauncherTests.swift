@@ -61,7 +61,11 @@ import Testing
     @Test func showsATimeSomewhereElse() {
         let answer = TimeZones.answer("3pm london in nyc", now: now, here: TimeZone(identifier: "Asia/Kolkata")!)
         #expect(answer?.time == "11:00 AM")  // London is back on GMT, New York not yet
-        #expect(answer?.detail == "New York · Sun, Oct 25 · UTC−4")
+        #expect(answer?.detail == "New York · Sun, Oct 25 · UTC−4 · 3:00 PM in London")
+        #expect(TimeZones.answer("3pm in nyc", now: now, here: TimeZone(identifier: "Asia/Kolkata")!)?.detail
+                == "New York · Sun, Oct 25 · UTC−4 · 3:00 PM here")
+        #expect(TimeZones.answer("3pm est", now: now, here: TimeZone(identifier: "UTC")!)?.time == "7:00 PM")  // "est" is New York time, daylight saving included
+        #expect(TimeZones.answer("now in sydney", now: now)?.time == "8:00 PM")
         #expect(TimeZones.answer("time in tokyo", now: now)?.time == "6:00 PM")
         #expect(TimeZones.answer("9:30 in delhi", now: now, here: TimeZone(identifier: "UTC")!)?.time == "3:00 PM")
         #expect(TimeZones.answer("3pm nowhere in nyc", now: now) == nil)

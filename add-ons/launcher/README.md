@@ -8,7 +8,7 @@ Settings) and type:
 - a file or folder in the home folder, from Spotlight's index
 - a sum, `1,250 * 1.2`, `80 + 15%`, `sqrt 2`, or a tip, `18% tip on 62.50`
 - a conversion, `10 km in miles`, `212 f to c`, `2 gb in mb`
-- a time, `time in tokyo`, `3pm london in nyc`, `9:30 in delhi`
+- a time, `time in tokyo`, `now in sydney`, `3pm london in nyc`, `3pm in nyc` (your 3pm there), `3pm est` (theirs here)
 
 Return opens the selected row, or copies an answer; ⌘C copies any row. The last row searches the web. Everything is
 found on this Mac and nothing is sent anywhere unless that web row is picked.
