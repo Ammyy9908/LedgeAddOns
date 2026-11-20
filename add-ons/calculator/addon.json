@@ -1,0 +1,25 @@
+{
+  "author": "Sumit Kumar",
+  "capabilities": [
+    "clipboard-write",
+    "notch-control"
+  ],
+  "category": "Productivity",
+  "description": "Basic and scientific calculations in the notch, with a keypad, typed expression previews, degrees or radians, memory and a local history tape. Click a result to copy it, or restore a past expression to calculate again.",
+  "executable": "Calculator",
+  "icon": "Assets/Icon.png",
+  "id": "calculator",
+  "kit": {
+    "minAPI": "0.23.0"
+  },
+  "name": "Calculator",
+  "protocolVersion": 2,
+  "summary": "Basic and scientific math in the notch",
+  "surfaces": [
+    "settings-page",
+    "widget",
+    "notch-page",
+    "shortcut"
+  ],
+  "version": "0.2.0"
+}
