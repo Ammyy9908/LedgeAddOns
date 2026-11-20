@@ -28,6 +28,11 @@ Your skin tone and the last 24 emoji you picked, on this Mac. Nothing about wher
 It doesn't open from typing a word like `:heart`, so nothing reads what you type. It leaves out emoji newer than your
 version of macOS can show. macOS's own emoji viewer stays on ⌃⌘Space.
 
+## Store preview
+
+The Store's motion preview is `Store/Demo.mp4`, a silent recording of browsing
+emoji categories in the picker. `listing.json` publishes it alongside the screenshot.
+
 ## Build it
 
 ```sh
