@@ -4,5 +4,9 @@
   "availability": "Free · LedgeKit API 0.22.0 · macOS 14 or later",
   "description": "Calculate in the notch with a basic keypad, two banks of scientific functions, live typed previews, degree and radian modes, session memory and a local history tape. Click a result to copy its full precision, or restore one of the last 50 calculations. Includes a small result widget and an opening shortcut. Calculations stay on this Mac. Keyboard input uses the separate typing view and its Evaluate button; keypad colors and shapes follow Ledge. Uses double-precision numbers, not arbitrary precision or currency conversion.",
   "feedbackURL": "https://github.com/Ammyy9908/LedgeAddOns/issues/new",
-  "screenshots": []
+  "screenshots": [
+    "Store/Basic.png",
+    "Store/Scientific.png",
+    "Store/Typing.png"
+  ]
 }

@@ -4,7 +4,7 @@ import Foundation
 extension CalculatorModel {
     public func page() -> NotchPage {
         // One header action fits beside the camera even at Compact width.
-        let actions = [PageAction("show-history", symbol: "clock.arrow.circlepath", label: "Calculation history")]
+        let actions: [PageAction] = view == .history ? [] : [PageAction("show-history", symbol: "clock.arrow.circlepath", label: "Calculation history")]
         let modes = row([("view-basic", "Basic"), ("view-scientific", "Scientific"), ("view-typing", "Type")])
         let content: PageNode
         switch view {
@@ -26,31 +26,35 @@ extension CalculatorModel {
                 .text(expression.isEmpty ? "Enter a calculation" : String(expression.suffix(32)), style: .caption),
                 .button(id: "result", title: resultText, symbol: "doc.on.doc"),
             ]
+            var keys: [[(String, String)]] = []
             if view == .basic {
-                for keys in [["AC", "±", "%", "÷"], ["7", "8", "9", "×"], ["4", "5", "6", "−"], ["1", "2", "3", "+"], ["0", ".", "⌫", "="]] {
-                    children.append(row(keys.map { ("key:" + $0, $0) }))
-                }
+                keys = [["AC", "±", "%", "÷"], ["7", "8", "9", "×"], ["4", "5", "6", "−"], ["1", "2", "3", "+"], ["0", ".", "⌫", "="]].map { $0.map { ("key:" + $0, $0) } }
             } else {
-                children.append(row([("second", second ? "1st" : "2nd"), ("angle", saved.angle == .degrees ? "DEG" : "RAD"), ("key:(", "("), ("key:)", ")")]))
+                keys.append([("second", second ? "1st" : "2nd"), ("angle", saved.angle == .degrees ? "DEG" : "RAD"), ("key:(", "("), ("key:)", ")")])
                 let functions = second
                     ? [["asin", "acos", "atan", "abs"], ["sinh", "cosh", "tanh", "log2"], ["asinh", "acosh", "atanh", "cbrt"]]
                     : [["sin", "cos", "tan", "sqrt"], ["ln", "log", "exp", "abs"]]
-                for names in functions { children.append(row(names.map { ("key:" + $0 + "(", $0) })) }
-                if !second { children.append(row([("key:π", "π"), ("key:e", "e"), ("exponent", "EE"), ("key:^", "xʸ")])) }
-                children.append(row([("memory-clear", "mc"), ("memory-add", "m+"), ("memory-subtract", "m−"), ("memory-recall", "mr")]))
-                children.append(row([("digits", "Digits"), ("key:!", "x!"), ("key:1/x", "1/x"), ("equals", "=")]))
+                for names in functions { keys.append(names.map { ("key:" + $0 + "(", $0) }) }
+                if !second { keys.append([("key:π", "π"), ("key:e", "e"), ("exponent", "EE"), ("key:^", "xʸ")]) }
+                keys.append([("memory-clear", "mc"), ("memory-add", "m+"), ("memory-subtract", "m−"), ("memory-recall", "mr")])
+                keys.append([("digits", "Digits"), ("key:!", "x!"), ("key:1/x", "1/x"), ("equals", "=")])
             }
+            children.append(keypad(keys))
             if let notice { children.append(.text(notice, style: .caption)) }
             content = .vstack(spacing: 6, children: children)
         }
         return NotchPage(title: "Calculator", symbol: "plus.forwardslash.minus", size: .large,
-                         screen: PageScreen(view.rawValue, depth: view == .history ? 1 : 0, title: "Calc", back: view == .history, actions: actions, content: content))
+                         screen: PageScreen(view.rawValue, depth: view == .history ? 1 : 0, title: view == .history ? nil : "Calc", back: view == .history, actions: actions, content: content))
     }
 
     private func row(_ keys: [(String, String)]) -> PageNode {
-        .hstack(spacing: 4, children: keys.enumerated().flatMap { index, key in
-            let button = PageNode.button(id: key.0, title: key.1, symbol: nil)
-            return index == keys.count - 1 ? [button] : [button, .spacer]
+        .hstack(spacing: 8, children: keys.map { .button(id: $0.0, title: $0.1, symbol: nil) })
+    }
+
+    /// Shared columns keep every key aligned; independent expanding row spacers do not.
+    private func keypad(_ rows: [[(String, String)]]) -> PageNode {
+        .hstack(spacing: 12, children: (0..<4).map { column in
+            .vstack(spacing: 6, children: rows.map { .button(id: $0[column].0, title: $0[column].1, symbol: nil) })
         })
     }
 
