@@ -3,59 +3,59 @@ import Foundation
 
 extension CalculatorModel {
     public func page() -> NotchPage {
-        // One header action fits beside the camera even at Compact width.
-        let actions: [PageAction] = view == .history ? [] : [PageAction("show-history", symbol: "clock.arrow.circlepath", label: "Calculation history")]
-        let modes = row([("view-basic", "Basic"), ("view-scientific", "Scientific"), ("view-typing", "Type")])
-        let content: PageNode
-        switch view {
-        case .history:
-            content = saved.history.isEmpty
+        let scientific = keypadView == .scientific
+        let toolbar: PageNode = .hstack(spacing: 6, children: [
+            .control(PageButton("view-basic", title: "Basic", role: scientific ? .normal : .selected)),
+            .control(PageButton("view-scientific", title: "Scientific", role: scientific ? .selected : .normal)),
+            .spacer,
+            .control(PageButton("show-history", title: "", role: view == .history ? .selected : .normal, symbol: "clock.arrow.circlepath", accessibilityLabel: "Calculation history")),
+            .control(PageButton("pin", title: "", role: pinned ? .selected : .normal, symbol: pinned ? "pin.fill" : "pin", accessibilityLabel: pinned ? "Unpin calculator" : "Pin calculator")),
+            .control(PageButton("copy", title: "", symbol: "doc.on.doc", accessibilityLabel: "Copy result")),
+        ])
+        var children = [toolbar]
+        if view == .history {
+            children.append(saved.history.isEmpty
                 ? .empty(symbol: "clock", title: "No calculations yet", detail: "Press equals to keep a result here.")
-                : .list(id: "history", rows: saved.history.map { ListRow($0.id, title: String($0.expression.prefix(80)), subtitle: "= " + NumberText.shown($0.result, precision: saved.precision) + ($0.angle == .degrees ? " · DEG" : " · RAD")) })
-        case .typing:
-            content = .vstack(spacing: 8, children: [
-                modes,
-                .editor(id: "expression", text: expression, placeholder: "249 * 12 or sin(30) + 2pi", autofocus: true),
-                .button(id: "result", title: resultText, symbol: "doc.on.doc"),
-                .text(notice ?? "Preview · " + (saved.angle == .degrees ? "Degrees" : "Radians"), style: .caption),
-                row([("clear", "Clear"), ("equals", "Evaluate"), ("copy", "Copy")]),
-            ])
-        case .basic, .scientific:
-            var children: [PageNode] = [
-                modes,
-                .text(expression.isEmpty ? "Enter a calculation" : String(expression.suffix(32)), style: .caption),
-                .button(id: "result", title: resultText, symbol: "doc.on.doc"),
-            ]
-            var keys: [[(String, String)]] = []
-            if view == .basic {
-                keys = [["AC", "±", "%", "÷"], ["7", "8", "9", "×"], ["4", "5", "6", "−"], ["1", "2", "3", "+"], ["0", ".", "⌫", "="]].map { $0.map { ("key:" + $0, $0) } }
-            } else {
-                keys.append([("second", second ? "1st" : "2nd"), ("angle", saved.angle == .degrees ? "DEG" : "RAD"), ("key:(", "("), ("key:)", ")")])
-                let functions = second
-                    ? [["asin", "acos", "atan", "abs"], ["sinh", "cosh", "tanh", "log2"], ["asinh", "acosh", "atanh", "cbrt"]]
-                    : [["sin", "cos", "tan", "sqrt"], ["ln", "log", "exp", "abs"]]
-                for names in functions { keys.append(names.map { ("key:" + $0 + "(", $0) }) }
-                if !second { keys.append([("key:π", "π"), ("key:e", "e"), ("exponent", "EE"), ("key:^", "xʸ")]) }
-                keys.append([("memory-clear", "mc"), ("memory-add", "m+"), ("memory-subtract", "m−"), ("memory-recall", "mr")])
-                keys.append([("digits", "Digits"), ("key:!", "x!"), ("key:1/x", "1/x"), ("equals", "=")])
-            }
-            children.append(keypad(keys))
-            if let notice { children.append(.text(notice, style: .caption)) }
-            content = .vstack(spacing: 6, children: children)
+                : .list(id: "history", rows: saved.history.map { ListRow($0.id, title: String($0.expression.prefix(80)) + ($0.angle == .degrees ? " · DEG" : " · RAD"), subtitle: NumberText.shown($0.result, precision: saved.precision), emphasizesSubtitle: true) }))
+        } else {
+            children.append(.readout(PageReadout("expression", expression: expression, value: resultText, copyControl: "result", autofocus: view == .typing, status: notice)))
+            children.append(.buttonGrid(columns: scientific ? 10 : 4, rowHeight: 30, buttons: scientific ? scientificKeys() : basicKeys()))
         }
-        return NotchPage(title: "Calculator", symbol: "plus.forwardslash.minus", size: .large,
-                         screen: PageScreen(view.rawValue, depth: view == .history ? 1 : 0, title: view == .history ? nil : "Calc", back: view == .history, actions: actions, content: content))
+        if view == .history, let notice { children.append(.text(notice, style: .caption)) }
+        return NotchPage(title: "Calculator", symbol: "plus.forwardslash.minus", size: .large, preferredWidth: scientific ? 720 : nil,
+                         screen: PageScreen(view.rawValue, depth: view == .history ? 1 : 0, back: view == .history, content: .vstack(spacing: 4, children: children)))
     }
 
-    private func row(_ keys: [(String, String)]) -> PageNode {
-        .hstack(spacing: 8, children: keys.map { .button(id: $0.0, title: $0.1, symbol: nil) })
+    private func key(_ title: String, token: String? = nil, role: PageButton.Role = .normal, label: String? = nil) -> PageButton {
+        PageButton("key:" + (token ?? title), title: title, role: role, accessibilityLabel: label)
     }
 
-    /// Shared columns keep every key aligned; independent expanding row spacers do not.
-    private func keypad(_ rows: [[(String, String)]]) -> PageNode {
-        .hstack(spacing: 12, children: (0..<4).map { column in
-            .vstack(spacing: 6, children: rows.map { .button(id: $0[column].0, title: $0[column].1, symbol: nil) })
-        })
+    private func basicKeys() -> [PageButton] { numericRows().flatMap { $0 } }
+
+    private func numericRows() -> [[PageButton]] {
+        [[key("⌫", role: .secondary, label: "Delete last character"), key("AC", role: .secondary, label: "All clear"), key("%", role: .secondary, label: "Percent"), key("÷", role: .accent, label: "Divide")],
+         [key("7"), key("8"), key("9"), key("×", role: .accent, label: "Multiply")],
+         [key("4"), key("5"), key("6"), key("−", role: .accent, label: "Subtract")],
+         [key("1"), key("2"), key("3"), key("+", role: .accent, label: "Add")],
+         [key("±", label: "Change sign"), key("0"), key("."), key("=", role: .accent, label: "Equals")]]
+    }
+
+    private func scientificKeys() -> [PageButton] {
+        func control(_ id: String, _ title: String, _ label: String? = nil) -> PageButton {
+            PageButton(id, title: title, accessibilityLabel: label)
+        }
+        func unary(_ name: String, _ title: String, _ label: String? = nil) -> PageButton {
+            control("unary:" + name, title, label)
+        }
+        let angle = saved.angle == .degrees ? "DEG" : "RAD"
+        let left: [[PageButton]] = [
+            [key("("), key(")"), control("memory-clear", "mc", "Clear memory"), control("memory-add", "m+", "Add to memory"), control("memory-subtract", "m−", "Subtract from memory"), control("memory-recall", "mr", "Recall memory")],
+            [PageButton("second", title: "2ⁿᵈ", role: second ? .selected : .normal, accessibilityLabel: "Second function bank"), unary("square", "x²", "Square"), unary("cube", "x³", "Cube"), key("xʸ", token: "^", label: "Power"), unary(second ? "ln" : "exp", second ? "ln x" : "eˣ"), unary(second ? "pow2" : "pow10", second ? "2ˣ" : "10ˣ")],
+            [key("1/x", label: "Reciprocal"), unary("sqrt", "²√x", "Square root"), unary("cbrt", "³√x", "Cube root"), key("ʸ√x", token: "^(1/", label: "Nth root; enter the degree then close the parenthesis"), unary(second ? "exp" : "ln", second ? "eˣ" : "ln"), unary(second ? "log2" : "log", second ? "log₂" : "log₁₀")],
+            [key("x!", token: "!", label: "Factorial"), unary(second ? "asin" : "sin", second ? "sin⁻¹" : "sin"), unary(second ? "acos" : "cos", second ? "cos⁻¹" : "cos"), unary(second ? "atan" : "tan", second ? "tan⁻¹" : "tan"), key("e"), control("exponent", "EE", "Scientific exponent")],
+            [control("random", "Rand", "Random number"), unary(second ? "asinh" : "sinh", second ? "sinh⁻¹" : "sinh"), unary(second ? "acosh" : "cosh", second ? "cosh⁻¹" : "cosh"), unary(second ? "atanh" : "tanh", second ? "tanh⁻¹" : "tanh"), key("π"), control("angle", angle, "Angle unit: " + angle)],
+        ]
+        return zip(left, numericRows()).flatMap { $0 + $1 }
     }
 
     public func widget() -> Widget {
@@ -73,7 +73,7 @@ extension CalculatorModel {
         SettingsPage([
             SettingsSection("calculator", title: "Calculator", rows: [
                 .button("open", "Open calculator"),
-                .picker("default-view", "Default view", options: [.init("basic", "Basic"), .init("scientific", "Scientific"), .init("typing", "Typing")], selected: saved.defaultView.rawValue),
+                .picker("default-view", "Default view", options: [.init("basic", "Basic"), .init("scientific", "Scientific")], selected: saved.defaultView.rawValue),
                 .picker("angle", "Angles", options: [.init("degrees", "Degrees"), .init("radians", "Radians")], selected: saved.angle.rawValue),
                 .picker("precision", "Decimal places", options: [2, 6, 10, 14].map { .init(String($0), String($0)) }, selected: String(saved.precision)),
             ]),
@@ -82,7 +82,7 @@ extension CalculatorModel {
                 .value("history-count", "Saved calculations", String(saved.history.count)),
                 .button("clear-history", "Clear history", destructive: true,
                         confirm: .init("Clear calculation history?", message: "Removes the saved calculations on this Mac.", confirmTitle: "Clear history")),
-                .note("limits", "Uses double-precision numbers. No currency conversion or arbitrary precision. Type expressions in the typing view; use Evaluate to save one."),
+                .note("limits", "Uses double-precision numbers. No currency conversion or arbitrary precision. Click the expression above the result; press Return to save it."),
             ]),
         ], keywords: ["math", "scientific", "memory", "history", "trigonometry"])
     }

@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "Calculator",
     platforms: [.macOS(.v14)],
-    dependencies: [.package(url: "https://github.com/Ammyy9908/LedgeKit.git", exact: "0.22.0")],
+    dependencies: [.package(url: "https://github.com/Ammyy9908/LedgeKit.git", exact: "0.23.0")],
     targets: [
         // What the add-on knows and what it shows, testable without Ledge.
         .target(name: "CalculatorCore", dependencies: [.product(name: "LedgeKit", package: "LedgeKit")]),

@@ -126,6 +126,8 @@ public enum Arithmetic {
             case "log2": return log2(x)
             case "ln": return log(x)
             case "exp": return exp(x)
+            case "pow10": return pow(10, x)
+            case "pow2": return pow(2, x)
             default: return nil
             }
         }

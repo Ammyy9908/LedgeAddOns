@@ -111,3 +111,94 @@ private func type(_ text: String) -> SurfaceEvent {
     try model.widget().validate()
     try model.settingsPage().validate()
 }
+
+@Test func scientificKeepsDigitsAndFunctionsInOneGrid() throws {
+    var model = CalculatorModel()
+    _ = model.handle(press("scientific"))
+    #expect(model.page().preferredWidth == 720)
+    func find(_ node: PageNode) -> [PageButton] {
+        switch node {
+        case .buttonGrid(let columns, _, let buttons):
+            #expect(columns == 10)
+            return buttons
+        case .vstack(_, let children), .hstack(_, let children): return children.flatMap(find)
+        default: return []
+        }
+    }
+    let buttons = find(model.page().screen.content)
+    #expect(buttons.count == 50)
+    #expect(buttons.contains { $0.id == "key:7" })
+    #expect(buttons.contains { $0.id == "unary:sin" })
+    #expect(buttons.first { $0.id == "key:÷" }?.role == .accent)
+    try model.page().validate()
+}
+
+@Test func inlineInputReturnAndPinWorkWithoutASeparateTypingPage() {
+    var model = CalculatorModel()
+    _ = model.handle(SurfaceEvent(surface: Surface.notchPage, control: "expression", action: .edited("249 * 12"), screen: "basic"))
+    _ = model.handle(press("expression"))
+    #expect(model.saved.history.first?.result == 2988)
+    #expect(model.handle(press("pin")) == .holdOpen(true))
+    #expect(model.handle(press("pin")) == .holdOpen(false))
+    _ = model.handle(press("clear"))
+    _ = model.handle(type("30"))
+    _ = model.handle(press("unary:sin"))
+    #expect(abs((model.value ?? 0) - 0.5) < 1e-12)
+}
+
+@Test func endingInlineEditingAfterReturnDoesNotSaveTwice() {
+    var model = CalculatorModel()
+    _ = model.handle(type("2+3"))
+    _ = model.handle(press("expression"))
+    _ = model.handle(SurfaceEvent(surface: Surface.notchPage, control: "expression", action: .ended("2+3"), screen: "basic"))
+    _ = model.handle(press("equals"))
+    #expect(model.saved.history.count == 1)
+}
+
+@Test func basicKeyPositionsFollowTheNativeMacCalculator() throws {
+    let page = CalculatorModel().page()
+    func buttons(_ node: PageNode) -> [PageButton] {
+        switch node {
+        case .buttonGrid(_, _, let buttons): buttons
+        case .vstack(_, let children), .hstack(_, let children): children.flatMap(buttons)
+        default: []
+        }
+    }
+    let keys = buttons(page.screen.content).map(\.id)
+    #expect(Array(keys.prefix(4)) == ["key:⌫", "key:AC", "key:%", "key:÷"])
+    #expect(Array(keys.suffix(4)) == ["key:±", "key:0", "key:.", "key:="])
+}
+
+@Test(arguments: [false, true], [false, true])
+func allViewPathsPreserveTheCalculationAndSelectedKeypad(scientific: Bool, second: Bool) throws {
+    var saved = CalculatorState()
+    saved.defaultView = scientific ? .scientific : .basic
+    var model = CalculatorModel(saved: saved)
+    _ = model.handle(type("sin(30) + 2pi")); _ = model.handle(press("equals"))
+    let result = try #require(model.value)
+    if second { _ = model.handle(press("second")) }
+    let entry = try #require(model.saved.history.first)
+    func verify(_ model: CalculatorModel) throws {
+        try model.page().validate()
+        try model.widget().validate()
+        try model.settingsPage().validate()
+        #expect(model.value == result)
+        #expect(model.keypadView == (scientific ? .scientific : .basic))
+        #expect(model.second == second)
+        #expect(model.page().preferredWidth == (scientific ? 720 : nil))
+    }
+    // Settings first-open, History back/toggle, row restore, shortcut, and widget reopen.
+    _ = model.handle(SurfaceEvent(surface: Surface.settingsPage, control: "open", action: .pressed))
+    try verify(model)
+    for _ in 0..<10 {
+        _ = model.handle(press("show-history")); try verify(model)
+        _ = model.handle(press("back")); try verify(model)
+        _ = model.handle(press("show-history")); try verify(model)
+        _ = model.handle(press("show-history")); try verify(model)
+        _ = model.handle(press("show-history"))
+        _ = model.handle(press("history", item: entry.id)); try verify(model)
+        _ = model.handle(SurfaceEvent(surface: Surface.shortcut, control: "open", action: .pressed)); try verify(model)
+        _ = model.handle(SurfaceEvent(surface: Surface.widget, control: "open", action: .pressed)); try verify(model)
+    }
+    #expect(model.saved.history.count == 1)
+}

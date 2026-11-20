@@ -25,10 +25,12 @@ actor Calculator {
             switch effect {
             case .copy(let text): try await LedgeHost.copy(text); model.showNotice("Copied."); send()
             case .openPage: try await LedgeHost.showPage()
+            case .holdOpen(let on): try await LedgeHost.holdOpen(on)
             case nil: break
             }
         } catch {
-            model.showNotice(effect == .openPage ? "Open unavailable" : "Copy unavailable")
+            if case .holdOpen = effect { model.pinFailed() }
+            else { model.showNotice(effect == .openPage ? "Open unavailable" : "Copy unavailable") }
             send()
         }
     }
