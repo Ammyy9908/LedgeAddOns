@@ -1,0 +1,24 @@
+{
+  "author": "Sumit Kumar",
+  "capabilities": [
+    "selection-translation"
+  ],
+  "category": "Productivity",
+  "description": "Select text in another app and press your shortcut. Ledge uses Apple Translation on this Mac and shows Copy and safe Replace in a floating card. Choose a target language and a second language for text already in it. An optional button beside mouse selections is off by default. Requires Accessibility, macOS 15 and LedgeKit API 0.24.0; Beta 10 is too old. Language files may need downloading. No text is sent to this add-on or an online service.",
+  "executable": "QuickTranslate",
+  "icon": "Assets/Icon.png",
+  "id": "quick-translate",
+  "kit": {
+    "minAPI": "0.24.0"
+  },
+  "name": "Quick Translate",
+  "protocolVersion": 2,
+  "summary": "Translate selected text in a card beside it",
+  "surfaces": [
+    "settings-page",
+    "shortcut",
+    "activity"
+  ],
+  "version": "0.1.0",
+  "minMacOS": "15.0"
+}
