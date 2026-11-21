@@ -1,0 +1,10 @@
+{
+  "developer": "Sumit Kumar",
+  "category": "Productivity",
+  "availability": "Free \u00b7 macOS 15 or later \u00b7 requires LedgeKit API 0.24.0 (newer than Ledge Beta 10)",
+  "description": "Translate text where you read or write it. Select up to 4,000 characters in another app and press the shortcut you choose in Quick Translate settings. A black card beside the selection shows the language direction, an On this Mac badge, the translation, Copy (\u2318C), Replace (Return) and Close (Escape). Choose a target language and a second language for text already in your target language. Turn on the optional button beside mouse selections if you prefer to click. Ledge uses Apple Translation for supported language pairs; macOS may ask to download language files. Requires Accessibility. Secure fields are excluded, and a changed or read-only selection is copied instead of edited. No selected or translated text is saved, sent to the add-on, or sent to an AI or online translation provider. Unsupported pairs show a message; there is no AI fallback.",
+  "feedbackURL": "https://github.com/Ammyy9908/LedgeAddOns/issues/new",
+  "screenshots": [
+    "Store/Translate.png"
+  ]
+}
