@@ -1,0 +1,10 @@
+{
+  "developer": "Sumit Kumar",
+  "category": "Productivity",
+  "availability": "Free \u00b7 Ledge beta 11 or later \u00b7 macOS 14 or later",
+  "description": "Seven local utilities in one notch workspace: Base64, JSON, hashes, UUID v4, JWT decoding, URL component encoding and QR codes. Switch modes, copy results or open the full output. QR codes export to the shelf as PNGs. No Devly installation, account or network access required. Input is held in memory only. JWT signatures are not verified; MD5 and SHA-1 are legacy checksums.",
+  "feedbackURL": "https://github.com/Ammyy9908/LedgeAddOns/issues/new",
+  "screenshots": [
+    "Store/Workspace.png"
+  ]
+}

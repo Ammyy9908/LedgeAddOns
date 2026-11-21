@@ -1,0 +1,27 @@
+{
+  "author": "Sumit Kumar",
+  "capabilities": [
+    "clipboard-write",
+    "notch-control",
+    "shelf-add"
+  ],
+  "category": "Productivity",
+  "description": "Encode Base64 and URL components, format JSON, compute hashes, generate UUIDs, inspect JWT claims and create QR codes. All processing stays on this Mac. Copy results explicitly, or export a QR PNG to the shelf. No account, network access or saved input.",
+  "executable": "DeveloperTools",
+  "icon": "Assets/Icon.png",
+  "id": "developer-tools",
+  "kit": {
+    "minAPI": "0.24.0"
+  },
+  "name": "Developer Tools",
+  "protocolVersion": 2,
+  "summary": "Local developer utilities in the notch",
+  "surfaces": [
+    "settings-page",
+    "notch-page",
+    "widget",
+    "shortcut"
+  ],
+  "version": "0.1.0",
+  "minMacOS": "14.0"
+}
