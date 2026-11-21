@@ -15,6 +15,11 @@ Settings) and type:
 Return opens the selected row, or copies an answer; ⌘C copies any row. The last row searches the web. Everything is
 found on this Mac and nothing is sent anywhere unless that web row is picked.
 
+## Store preview
+
+`Store/Demo.mp4` is a silent recording of Launcher categories, file previews and
+an Ask AI answer. `listing.json` publishes it alongside the screenshot.
+
 ## How Ledge asks
 
 The manifest declares the `launcher` surface. Ledge owns the panel, its shortcut and what Return does; as the person
