@@ -6,5 +6,6 @@
   "feedbackURL": "https://github.com/Ammyy9908/LedgeAddOns/issues/new",
   "screenshots": [
     "Store/Devices.png"
-  ]
+  ],
+  "motionDemo": "Store/Demo.mp4"
 }
