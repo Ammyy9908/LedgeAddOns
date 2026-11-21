@@ -1,6 +1,6 @@
 # Developer Tools
 
-Seven local tools in Ledge’s notch: Base64, JSON, hashes, UUID v4, JWT decoding, URL components and QR codes. Requires Ledge beta 11 or later (LedgeKit API 0.24.0), on macOS 14 or later. No companion app or account is needed.
+Seven local tools in Ledge’s notch: Base64, JSON, hashes, UUID v4, JWT decoding, URL components and QR codes. Requires Ledge beta 12 or later (LedgeKit API 0.24.0), on macOS 14 or later. No companion app or account is needed.
 
 ## Use
 
