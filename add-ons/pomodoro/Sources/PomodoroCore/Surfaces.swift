@@ -12,7 +12,7 @@ extension PomodoroModel {
 
     /// Like a kitchen timer in the notch: pick Focus or Break, drag the tape to a length, start, then pause or stop.
     public func page(now: Date) -> NotchPage {
-        NotchPage(title: "Pomodoro", symbol: "timer", size: .small,
+        NotchPage(title: "Focus Timer", symbol: "timer", size: .small,
                   screen: PageScreen("timer", content: saved.run.map { running($0, now: now) } ?? picker()))
     }
 
@@ -85,7 +85,7 @@ extension PomodoroModel {
             .hstack(spacing: 6, children: [.text(line, style: .caption), .spacer, .text(time, style: .title)]),
             buttons[0],
         ])
-        return Widget("pomodoro", title: "Pomodoro", symbol: "timer", content: full, compactContent: compact)
+        return Widget("pomodoro", title: "Focus Timer", symbol: "timer", content: full, compactContent: compact)
     }
 
     // MARK: Beside the notch and on the lock screen
@@ -110,7 +110,7 @@ extension PomodoroModel {
 
     /// The notice when a session reaches its length.
     public static func notice(for mode: Mode, minutes: Int) -> (title: String, message: String) {
-        ("Pomodoro complete", "\(mode.name) is done · \(minutes) minute \(mode.name) finished")
+        ("Session complete", "\(mode.name) is done · \(minutes) minute \(mode.name) finished")
     }
 
     // MARK: Settings
@@ -121,7 +121,7 @@ extension PomodoroModel {
         }
         return SettingsPage([
             SettingsSection("timer", rows: [
-                .toggle("start-instantly", "Start as soon as you open it", detail: "Opening Pomodoro starts your last timer.",
+                .toggle("start-instantly", "Start as soon as you open it", detail: "Opening Focus Timer starts your last timer.",
                         isOn: saved.startInstantly),
                 .toggle("always-show", "Always show the timer in the notch",
                         detail: "Show the timer beside the notch for the whole session, not only on the page and lock screen.",

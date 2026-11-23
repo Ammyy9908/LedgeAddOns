@@ -4,7 +4,7 @@ import Foundation
 import LedgeKit
 import PomodoroCore
 
-// Pomodoro: a focus and break timer in the notch. Core builds every surface; this program keeps the clock, plays
+// Focus Timer: a focus and break timer in the notch. Core builds every surface; this program keeps the clock, plays
 // the end sound, the ambient sound and the reminders, and sends what Core builds. Nothing leaves the Mac.
 
 /// The ambient sound on the Mac's output while a session counts down: macOS's Background Sounds file, looped without
