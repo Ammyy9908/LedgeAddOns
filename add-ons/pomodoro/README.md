@@ -5,17 +5,14 @@ countdown beside the notch while you work.
 
 ## Using it
 
-- **The page**: open Pomodoro in the notch's Add-ons pill. Choose **Focus** or **Break**, set the length with the
-  slider (from a minute to eight hours, finer at the short end) or the − and + buttons, then **Start timer**. Focus and
-  Break each remember their length, so 25 and 5 stay set.
+- **The page**: open Pomodoro in the notch's Add-ons pill. Choose **Focus** or **Break**, drag the minute tape under
+  the pointer to set the length (from a minute to eight hours), then **Start Timer**. Focus is orange and Break blue,
+  and each remembers its length, so 25 and 5 stay set.
 - **Stopwatch**: the stopwatch button starts a count-up with the same pause and stop.
-- **While it runs**: pause or resume with the orange button, stop with ×. The page reads Focus, Break, Stopwatch or
-  Paused beside the time.
+- **While it runs**: pause or resume with the round coloured button, stop with ×. The page reads Focus, Break,
+  Stopwatch or Paused beside the time.
 - **When a session ends**: the end sound and a "Pomodoro complete" notice. The timer then counts overtime (+00:22),
-  and a third button starts the next session (a break after focus, focus after a break). Turn on **Move on
-  automatically** to go straight into it.
-- **Focus title**: the pencil button opens a line to say what you're working on. It shows under the timer and on the
-  widget.
+  and a third button starts the next session (a break after focus, focus after a break).
 - **Ambient sound**: the speaker button turns it on and off; pick the sound in Settings. It plays while a session
   counts down, not in overtime.
 - **Elsewhere**: the time sits beside the notch with a progress ring, on the lock screen while the Mac is locked, and
@@ -25,23 +22,27 @@ countdown beside the notch while you work.
 ## Settings
 
 - **Start as soon as you open it**: opening the Pomodoro page starts your last timer.
+- **Always show the timer in the notch**: off, the timer shows on the page, widget and lock screen only.
 - **End sound**: None or one of the macOS sounds (Glass by default), with **Play** to hear it.
-- **Show a notice when a session ends**.
-- **More options**: **Show seconds beside the notch** (off reads 25m), and **Move on automatically**.
-- **Ambient sound**: on or off, Brown, Pink or White noise, the volume, and whether it plays during breaks.
+- **More options**: **Show seconds in the notch** (off reads 25m).
+- **Reminders**: Eye break (every 20 minutes), Drink water (30), Stand up (hourly), and your own reminders, every
+  30 minutes. They come during focus sessions and stopwatches, not breaks.
+- **Ambient sound**: on or off; Rain, Ocean, Stream, Fireplace, Brown, Pink or White Noise, with **Play**; the
+  volume; and whether it plays during breaks.
 
 ## What it does on your Mac
 
-Pomodoro keeps its lengths, title and the running session (as its end time) in Ledge's settings for the add-on, so a
-timer survives Ledge restarting. Ambient noise is generated on the Mac and played on the current output; the end sound is
+Pomodoro keeps its lengths, settings and the running session (as its end time) in Ledge's settings for the add-on, so a
+timer survives Ledge restarting. Ambient sound is generated on the Mac and played on the current output; the end sound is
 one of the macOS system sounds. It reads nothing else and sends nothing anywhere.
 
 ## What it can't do
 
-- No rain, fireplace or other recorded sounds: only generated brown, pink and white noise.
-- No reminders, and it can't turn on a macOS Focus.
-- It can't follow timers set in Apple's Clock app.
-- The length is set with a slider, not a scrolling tape, and Break uses the same accent colour as Focus.
+- Its rain, ocean and other scenes are generated, not recordings, and there's no airplane, train or other recorded
+  sound.
+- It can't follow timers set in Apple's Clock app or turn on a macOS Focus.
+- The timer can't appear only when you hover over the notch: it shows beside the notch for the whole session, or not
+  at all.
 
 ## Building
 

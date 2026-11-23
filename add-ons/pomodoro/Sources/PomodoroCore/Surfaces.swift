@@ -3,75 +3,60 @@ import LedgeKit
 
 extension Mode {
     public var symbol: String { ["focus": "timer", "rest": "cup.and.saucer.fill", "stopwatch": "stopwatch"][rawValue]! }
+    /// Focus and the stopwatch are orange, Break is blue.
+    public var tint: PageTint { self == .rest ? .blue : .orange }
 }
 
 extension PomodoroModel {
     // MARK: Notch page
 
-    /// Like a kitchen timer in the notch: pick Focus or Break and a length, start, then pause or stop.
+    /// Like a kitchen timer in the notch: pick Focus or Break, drag the tape to a length, start, then pause or stop.
     public func page(now: Date) -> NotchPage {
-        let screen: PageScreen
-        if editingTitle {
-            screen = PageScreen("title", depth: 1, title: "Focus title", back: true, actions: saved.title.isEmpty ? [] : [
-                PageAction("clear-title", symbol: "xmark.circle", label: "Clear title"),
-            ], content: .editor(id: "title", text: saved.title, placeholder: "What are you working on?", autofocus: true))
-        } else if let run = saved.run {
-            screen = PageScreen("timer", content: running(run, now: now))
-        } else {
-            screen = PageScreen("timer", content: picker())
-        }
-        return NotchPage(title: "Pomodoro", symbol: "timer", size: .small, screen: screen)
+        NotchPage(title: "Pomodoro", symbol: "timer", size: .small,
+                  screen: PageScreen("timer", content: saved.run.map { running($0, now: now) } ?? picker()))
     }
 
     private func picker() -> PageNode {
-        let mode = saved.mode, length = minutes(mode)
+        let mode = saved.mode, tint = mode.tint
         let ambientOn = saved.ambientOn
         return .vstack(spacing: 8, children: [
             .hstack(spacing: 6, children: [
-                .control(PageButton("mode-focus", title: "Focus", role: mode == .focus ? .selected : .secondary)),
                 .spacer,
-            ] + (saved.title.isEmpty ? [] : [.text(saved.title, style: .secondary), .spacer]) + [
-                .control(PageButton("mode-rest", title: "Break", role: mode == .rest ? .selected : .secondary)),
+                .control(PageButton("mode-focus", title: "Focus", role: mode == .focus ? .selected : .secondary, tint: Mode.focus.tint)),
+                .control(PageButton("mode-rest", title: "Break", role: mode == .rest ? .selected : .secondary, tint: Mode.rest.tint)),
+                .spacer,
             ]),
+            .tape(PageTape("length", value: minutes(mode), minimum: Length.range.lowerBound, maximum: Length.range.upperBound,
+                           labelEvery: 5, tint: tint, accessibilityLabel: "\(mode.name) length in minutes")),
             .hstack(spacing: 6, children: [
-                .control(PageButton("shorter", title: "", role: .secondary, symbol: "minus", accessibilityLabel: "A minute shorter")),
-                .slider(id: "length", value: Length.slider(minutes: length), maximum: nil, label: nil, image: nil),
-                .control(PageButton("longer", title: "", role: .secondary, symbol: "plus", accessibilityLabel: "A minute longer")),
-            ]),
-            .hstack(spacing: 6, children: [
-                .control(PageButton("start", title: "Start timer", role: .accent)),
+                .control(PageButton("start", title: "Start Timer", role: .accent, tint: tint)),
                 .control(PageButton("ambient", title: "", role: ambientOn ? .selected : .secondary,
                                     symbol: ambientOn ? "speaker.wave.2.fill" : "speaker.slash.fill",
-                                    accessibilityLabel: ambientOn ? "Turn off ambient sound" : "Turn on ambient sound")),
+                                    accessibilityLabel: ambientOn ? "Turn off ambient sound" : "Turn on ambient sound", tint: tint)),
                 .control(PageButton("stopwatch", title: "", role: .secondary, symbol: "stopwatch", accessibilityLabel: "Start a stopwatch")),
-                .control(PageButton("edit-title", title: "", role: saved.title.isEmpty ? .secondary : .selected, symbol: "pencil",
-                                    accessibilityLabel: "Focus title")),
                 .spacer,
-                .text(problem ?? clock(TimeInterval(length * 60)), style: problem == nil ? .title : .caption),
+                problem.map { .text($0, style: .caption) } ?? .display(clock(TimeInterval(minutes(mode) * 60)), tint: tint),
             ]),
         ])
     }
 
     private func running(_ run: Run, now: Date) -> PageNode {
-        let label = run.isPaused ? (run.mode == .stopwatch ? run.mode.name : "Paused") : run.mode.name
-        return .vstack(spacing: 10, children: [
-            // A button grid, unlike inline buttons, makes Ledge run the row across the page's whole width.
-            .hstack(spacing: 6, children: [
-                .buttonGrid(columns: controls(run, now: now).count, rowHeight: 28, buttons: controls(run, now: now)),
-                .spacer,
-                .text(label, style: .secondary),
-                .text(run.reading(at: now), style: .title),
-            ]),
-        ] + (saved.title.isEmpty || run.mode == .stopwatch ? [] : [.text(saved.title, style: .secondary)]))
+        let label = run.isPaused && run.mode != .stopwatch ? "Paused" : run.mode.name
+        return .hstack(spacing: 8, children: controls(run, now: now).map(PageNode.control) + [
+            .spacer,
+            .text(label, style: .secondary),
+            .display(run.reading(at: now), tint: run.mode.tint),
+        ])
     }
 
     /// Pause or resume, then, once the session has reached its length, the next one, then stop.
     private func controls(_ run: Run, now: Date) -> [PageButton] {
-        var buttons = [run.isPaused ? PageButton("resume", title: "", role: .accent, symbol: "play.fill", accessibilityLabel: "Resume")
-                                    : PageButton("pause", title: "", role: .accent, symbol: "pause.fill", accessibilityLabel: "Pause")]
+        let tint = run.mode.tint
+        var buttons = [run.isPaused ? PageButton("resume", title: "", role: .accent, symbol: "play.fill", accessibilityLabel: "Resume", tint: tint)
+                                    : PageButton("pause", title: "", role: .accent, symbol: "pause.fill", accessibilityLabel: "Pause", tint: tint)]
         if run.overtime(at: now) != nil {
-            buttons.append(PageButton("next", title: "", role: .accent, symbol: "arrow.clockwise",
-                                      accessibilityLabel: "Start " + (run.mode.next == .rest ? "the break" : "focusing")))
+            buttons.append(PageButton("next", title: "", role: .selected, symbol: "arrow.clockwise",
+                                      accessibilityLabel: "Start " + (run.mode.next == .rest ? "the break" : "focusing"), tint: tint))
         }
         return buttons + [PageButton("stop", title: "", role: .secondary, symbol: "xmark", accessibilityLabel: "Stop")]
     }
@@ -92,9 +77,8 @@ extension PomodoroModel {
             buttons = [.button(id: "start", title: "Start", symbol: "play.fill"),
                        .button(id: saved.mode == .focus ? "mode-rest" : "mode-focus", title: saved.mode.next.name, symbol: saved.mode.next.symbol)]
         }
-        let title = saved.title.isEmpty || saved.run?.mode == .stopwatch ? line : line + " · " + saved.title
         let full: WidgetNode = .vstack(spacing: 8, children: [
-            .hstack(spacing: 8, children: [.text(String(title.prefix(40)), style: .secondary), .spacer, .text(time, style: .title)]),
+            .hstack(spacing: 8, children: [.text(line, style: .secondary), .spacer, .text(time, style: .title)]),
             .hstack(spacing: 8, children: buttons + [.spacer]),
         ])
         let compact: WidgetNode = .vstack(spacing: 6, children: [
@@ -107,7 +91,7 @@ extension PomodoroModel {
     // MARK: Beside the notch and on the lock screen
 
     public func activities(now: Date) -> [LiveActivity] {
-        guard let run = saved.run else { return [] }
+        guard saved.alwaysShow, let run = saved.run else { return [] }
         let over = run.overtime(at: now)
         let spokenTime = run.mode == .stopwatch ? spoken(run.elapsed(at: now).rounded(.down))
             : over.map { spoken($0.rounded(.down)) + " over" } ?? spoken(run.remaining(at: now)) + " left"
@@ -124,7 +108,7 @@ extension PomodoroModel {
                              value: run.reading(at: now, seconds: saved.showSeconds))
     }
 
-    /// The notice when a session reaches its length, as Droppy words it.
+    /// The notice when a session reaches its length.
     public static func notice(for mode: Mode, minutes: Int) -> (title: String, message: String) {
         ("Pomodoro complete", "\(mode.name) is done · \(minutes) minute \(mode.name) finished")
     }
@@ -132,27 +116,39 @@ extension PomodoroModel {
     // MARK: Settings
 
     public func settingsPage() -> SettingsPage {
-        SettingsPage([
+        let custom = saved.customReminders.enumerated().map { index, text in
+            SettingsRow.button("remove-reminder:\(index)", "Remove", detail: text, destructive: true)
+        }
+        return SettingsPage([
             SettingsSection("timer", rows: [
-                .toggle("start-instantly", "Start as soon as you open it", detail: "Opening the Pomodoro page starts your last timer.",
+                .toggle("start-instantly", "Start as soon as you open it", detail: "Opening Pomodoro starts your last timer.",
                         isOn: saved.startInstantly),
+                .toggle("always-show", "Always show the timer in the notch",
+                        detail: "Show the timer beside the notch for the whole session, not only on the page and lock screen.",
+                        isOn: saved.alwaysShow),
                 .picker("end-sound", "End sound", options: (["None"] + endSounds).map { .init($0, $0) }, selected: saved.endSound),
                 .button("preview-end-sound", "Play", detail: "Hear the end sound."),
-                .toggle("notice", "Show a notice when a session ends", isOn: saved.notice),
             ]),
             SettingsSection("more", title: "More options", rows: [
-                .toggle("show-seconds", "Show seconds beside the notch", detail: "Off, the timer beside the notch and on the lock screen reads in minutes.",
-                        isOn: saved.showSeconds),
-                .toggle("auto-continue", "Move on automatically",
-                        detail: "Start the break when focus ends, and focus when the break ends, instead of counting overtime.",
-                        isOn: saved.autoContinue),
+                .toggle("show-seconds", "Show seconds in the notch", isOn: saved.showSeconds),
             ]),
-            SettingsSection("ambient", title: "Ambient sound", footer: "Generated on this Mac. It plays while a session counts down.", rows: [
+            SettingsSection("reminders", title: "Reminders", footer: "Small reminders in the notch while you work.", rows: [
+                .toggle("eye-break", "Eye break", detail: "Look about 6 meters (20 feet) away for 20 seconds, every 20 minutes.",
+                        isOn: saved.eyeBreak),
+                .toggle("drink-water", "Drink water", detail: "Every 30 minutes.", isOn: saved.drinkWater),
+                .toggle("stand-up", "Stand up", detail: "Every hour.", isOn: saved.standUp),
+            ] + custom + [
+                .textField("new-reminder", "New reminder", detail: "Shown every 30 minutes.", text: newReminder, placeholder: "Stretch your shoulders"),
+                .button("add-reminder", "Add"),
+            ]),
+            SettingsSection("ambient", title: "Ambient sound", rows: [
                 .toggle("ambient-on", "Enable ambient sound", isOn: saved.ambientOn),
                 .picker("ambient-sound", "Sound", options: Ambient.allCases.map { .init($0.rawValue, $0.name) }, selected: saved.ambient.rawValue),
+                .button("preview-ambient", "Play", detail: "Hear a few seconds of it."),
                 .slider("volume", "Volume", range: 0...100, step: 5, value: (saved.volume * 100).rounded(), unit: "%"),
                 .toggle("ambient-in-breaks", "Play during breaks", isOn: saved.ambientInBreaks),
             ]),
-        ], keywords: ["focus", "break", "timer", "pomodoro", "countdown", "stopwatch", "brown noise", "pink noise", "white noise"])
+        ], keywords: ["focus", "break", "timer", "pomodoro", "countdown", "stopwatch", "reminders", "rain", "ocean", "brown noise",
+                      "white noise"])
     }
 }

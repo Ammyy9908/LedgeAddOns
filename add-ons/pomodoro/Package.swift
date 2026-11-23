@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "Pomodoro",
     platforms: [.macOS(.v14)],
-    dependencies: [.package(url: "https://github.com/Ammyy9908/LedgeKit.git", exact: "0.25.0")],
+    dependencies: [.package(url: "https://github.com/Ammyy9908/LedgeKit.git", exact: "0.26.0")],
     targets: [
         // The timer and what it shows, testable without Ledge.
         .target(name: "PomodoroCore", dependencies: [.product(name: "LedgeKit", package: "LedgeKit")]),

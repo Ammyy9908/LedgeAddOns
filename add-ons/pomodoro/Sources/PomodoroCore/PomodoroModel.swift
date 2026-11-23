@@ -7,15 +7,37 @@ public enum Mode: String, Codable, Sendable {
     public var next: Mode { self == .focus ? .rest : .focus }
 }
 
-/// Generated noise to play while a session runs.
+/// Generated sound to play while a session runs.
 public enum Ambient: String, Codable, Sendable, CaseIterable {
-    case brown, pink, white
-    public var name: String { ["brown": "Brown noise", "pink": "Pink noise", "white": "White noise"][rawValue]! }
+    case rain, ocean, stream, fireplace, brown, pink, white
+    public var name: String {
+        ["rain": "Rain", "ocean": "Ocean", "stream": "Stream", "fireplace": "Fireplace", "brown": "Brown Noise",
+         "pink": "Pink Noise", "white": "White Noise"][rawValue]!
+    }
 }
 
 /// The macOS alert sounds, offered as the end sound.
 public let endSounds = ["Basso", "Blow", "Bottle", "Frog", "Funk", "Glass", "Hero", "Morse", "Ping", "Pop", "Purr", "Sosumi",
                         "Submarine", "Tink"]
+
+/// A small reminder shown while you work, every `minutes` of a focus session or stopwatch.
+public struct Reminder: Equatable, Sendable {
+    public var id: String
+    public var title: String
+    public var message: String
+    public var symbol: String
+    public var minutes: Int
+
+    public static let eyeBreak = Reminder(id: "eye-break", title: "Eye break", message: "Look about 6 meters (20 feet) away for 20 seconds",
+                                          symbol: "eye", minutes: 20)
+    public static let drinkWater = Reminder(id: "drink-water", title: "Drink water", message: "Have a glass of water", symbol: "drop.fill",
+                                            minutes: 30)
+    public static let standUp = Reminder(id: "stand-up", title: "Stand up", message: "Stand up and stretch for a minute",
+                                         symbol: "figure.stand", minutes: 60)
+    static func custom(_ text: String) -> Reminder {
+        Reminder(id: "custom:" + text, title: "Reminder", message: text, symbol: "bell.fill", minutes: 30)
+    }
+}
 
 /// A session under way. It keeps counting past its length, as overtime, until it's stopped or the next one starts; a
 /// stopwatch has no length and only counts up. Running while `since` is set, paused while it's nil.
@@ -29,6 +51,8 @@ public struct Run: Codable, Sendable, Equatable {
     public var counted: TimeInterval = 0
     /// The end has been announced, so it isn't again.
     public var ended = false
+    /// How many times each reminder has been shown in this session, by its id.
+    public var reminded: [String: Int]?
 
     public init(mode: Mode, total: TimeInterval, since: Date?) {
         self.mode = mode
@@ -56,15 +80,18 @@ public struct Saved: Codable, Sendable, Equatable {
     public var focusMinutes = 25
     public var breakMinutes = 5
     public var mode = Mode.focus
-    public var title = ""
     /// "None" or one of ``endSounds``.
     public var endSound = "Glass"
-    public var notice = true
-    public var autoContinue = false
     public var startInstantly = false
+    /// The timer beside the notch for the whole session; off, it shows on the page, widget and lock screen only.
+    public var alwaysShow = true
     public var showSeconds = true
+    public var eyeBreak = false
+    public var drinkWater = false
+    public var standUp = false
+    public var customReminders: [String] = []
     public var ambientOn = false
-    public var ambient = Ambient.brown
+    public var ambient = Ambient.rain
     public var volume = 0.3
     public var ambientInBreaks = true
     public var run: Run?
@@ -79,37 +106,31 @@ public struct Saved: Codable, Sendable, Equatable {
         focusMinutes = read(.focusMinutes, d.focusMinutes)
         breakMinutes = read(.breakMinutes, d.breakMinutes)
         mode = read(.mode, d.mode)
-        title = read(.title, d.title)
         endSound = read(.endSound, d.endSound)
-        notice = read(.notice, d.notice)
-        autoContinue = read(.autoContinue, d.autoContinue)
         startInstantly = read(.startInstantly, d.startInstantly)
+        alwaysShow = read(.alwaysShow, d.alwaysShow)
         showSeconds = read(.showSeconds, d.showSeconds)
+        eyeBreak = read(.eyeBreak, d.eyeBreak)
+        drinkWater = read(.drinkWater, d.drinkWater)
+        standUp = read(.standUp, d.standUp)
+        customReminders = read(.customReminders, d.customReminders)
         ambientOn = read(.ambientOn, d.ambientOn)
         ambient = read(.ambient, d.ambient)
         volume = read(.volume, d.volume)
         ambientInBreaks = read(.ambientInBreaks, d.ambientInBreaks)
         run = (try? c.decodeIfPresent(Run.self, forKey: .run)) ?? nil
     }
+
+    /// The reminders that are on, built-in first.
+    public var reminders: [Reminder] {
+        [(eyeBreak, Reminder.eyeBreak), (drinkWater, .drinkWater), (standUp, .standUp)].filter(\.0).map(\.1)
+            + customReminders.map(Reminder.custom)
+    }
 }
 
-/// Lengths, in minutes, from 1 to 8 hours: the slider is squared so the short end, where most sessions are, gets
-/// most of its width. Under an hour it moves by a minute, above by five.
+/// Lengths, in whole minutes, from 1 to 8 hours.
 public enum Length {
     public static let range = 1...480
-
-    public static func minutes(slider value: Double) -> Int {
-        let raw = 1 + 479 * min(max(value, 0), 1) * min(max(value, 0), 1)
-        return clamp(raw < 60 ? Int(raw.rounded()) : Int((raw / 5).rounded()) * 5)
-    }
-
-    public static func slider(minutes: Int) -> Double { ((Double(clamp(minutes)) - 1) / 479).squareRoot() }
-
-    public static func step(_ minutes: Int, by direction: Int) -> Int {
-        if direction > 0 { return clamp(minutes < 60 ? minutes + 1 : minutes / 5 * 5 + 5) }
-        return clamp(minutes <= 60 ? minutes - 1 : (minutes + 4) / 5 * 5 - 5)
-    }
-
     static func clamp(_ minutes: Int) -> Int { min(max(minutes, range.lowerBound), range.upperBound) }
 }
 
@@ -132,8 +153,8 @@ public func spoken(_ seconds: TimeInterval) -> String {
 
 public struct PomodoroModel: Sendable {
     public var saved = Saved()
-    /// The notch page's title editor is open.
-    public var editingTitle = false
+    /// What's typed in Settings' New reminder field, not yet added.
+    public var newReminder = ""
     public var problem: String?
 
     public init(saved: Saved = Saved()) { self.saved = saved }
@@ -148,9 +169,7 @@ public struct PomodoroModel: Sendable {
         switch (event.control, event.action) {
         case ("mode-focus", .pressed): choose(.focus)
         case ("mode-rest", .pressed): choose(.rest)
-        case ("length", .changed(let value)): setMinutes(Length.minutes(slider: value))
-        case ("shorter", .pressed): setMinutes(Length.step(minutes(saved.mode), by: -1))
-        case ("longer", .pressed): setMinutes(Length.step(minutes(saved.mode), by: 1))
+        case ("length", .changed(let value)): setMinutes(Length.clamp(Int(value.rounded())))
         case ("start", .pressed): start(saved.mode, now: now)
         case ("stopwatch", .pressed): start(.stopwatch, now: now)
         case ("pause", .pressed): pause(now: now)
@@ -165,13 +184,17 @@ public struct PomodoroModel: Sendable {
         case ("ambient-in-breaks", .toggled(let on)): saved.ambientInBreaks = on
         case ("end-sound", .picked(let id)): saved.endSound = id == "None" || endSounds.contains(id) ? id : saved.endSound
         case ("show-seconds", .toggled(let on)): saved.showSeconds = on
-        case ("edit-title", .pressed): editingTitle = true
-        case (PageScreen.backControl, .pressed): editingTitle = false
-        case ("title", .edited(let text)), ("title", .ended(let text)): saved.title = Self.title(from: text)
-        case ("clear-title", .pressed): saved.title = ""
-        case ("notice", .toggled(let on)): saved.notice = on
-        case ("auto-continue", .toggled(let on)): saved.autoContinue = on
+        case ("always-show", .toggled(let on)): saved.alwaysShow = on
         case ("start-instantly", .toggled(let on)): saved.startInstantly = on
+        case ("eye-break", .toggled(let on)): saved.eyeBreak = on
+        case ("drink-water", .toggled(let on)): saved.drinkWater = on
+        case ("stand-up", .toggled(let on)): saved.standUp = on
+        case ("new-reminder", .edited(let text)), ("new-reminder", .ended(let text)): newReminder = text
+        case ("add-reminder", .pressed): addReminder()
+        case (let control, .pressed) where control.hasPrefix("remove-reminder:"):
+            if let index = Int(control.dropFirst("remove-reminder:".count)), saved.customReminders.indices.contains(index) {
+                saved.customReminders.remove(at: index)
+            }
         default: break
         }
     }
@@ -182,7 +205,7 @@ public struct PomodoroModel: Sendable {
         run.isPaused ? resume(now: now) : pause(now: now)
     }
 
-    /// Opening the page with Start instantly on starts the last timer.
+    /// Opening the page with Start as soon as you open it on starts the last timer.
     public mutating func opened(now: Date) {
         if saved.startInstantly, saved.run == nil { start(saved.mode, now: now) }
     }
@@ -194,13 +217,35 @@ public struct PomodoroModel: Sendable {
     }
 
     /// Moves the clock on. Returns the session that just reached its length, once, so the program can sound and say
-    /// so. It then counts overtime, unless Move on automatically starts the next session.
-    public mutating func tick(now: Date) -> Mode? {
-        guard var run = saved.run, !run.ended, run.overtime(at: now) != nil else { return nil }
-        run.ended = true
-        saved.run = run
-        if saved.autoContinue { start(run.mode.next, now: now) }
-        return run.mode
+    /// so; it then counts overtime until the next session is started. Also returns the reminders now due.
+    public mutating func tick(now: Date) -> (ended: Mode?, reminders: [Reminder]) {
+        guard var run = saved.run else { return (nil, []) }
+        var due: [Reminder] = []
+        // Reminders are for working: a focus session or a stopwatch, while it runs.
+        if run.mode != .rest, !run.isPaused {
+            let minutes = Int(run.elapsed(at: now) / 60)
+            var reminded = run.reminded ?? [:]
+            for reminder in saved.reminders {
+                let count = minutes / reminder.minutes
+                if count > reminded[reminder.id, default: 0] { due.append(reminder) }
+                reminded[reminder.id] = count
+            }
+            run.reminded = reminded
+        }
+        var ended: Mode?
+        if !run.ended, run.overtime(at: now) != nil {
+            run.ended = true
+            ended = run.mode
+        }
+        if run != saved.run { saved.run = run }
+        return (ended, due)
+    }
+
+    mutating func addReminder() {
+        let text = String(newReminder.trimmingCharacters(in: .whitespacesAndNewlines).prefix(80))
+        guard !text.isEmpty, !saved.customReminders.contains(text), saved.customReminders.count < 10 else { return }
+        saved.customReminders.append(text)
+        newReminder = ""
     }
 
     mutating func choose(_ mode: Mode) {
@@ -229,11 +274,5 @@ public struct PomodoroModel: Sendable {
         guard var run = saved.run, run.isPaused else { return }
         run.since = now
         saved.run = run
-    }
-
-    /// The editor hands back Markdown; a title is its first line, plain, up to 60 characters.
-    static func title(from text: String) -> String {
-        let line = text.split(whereSeparator: \.isNewline).first.map(String.init) ?? ""
-        return String(line.trimmingCharacters(in: CharacterSet(charactersIn: "#*_>- ").union(.whitespaces)).prefix(60))
     }
 }

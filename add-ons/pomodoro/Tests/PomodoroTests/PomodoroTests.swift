@@ -4,21 +4,8 @@ import Testing
 @testable import PomodoroCore
 
 private func press(_ control: String) -> SurfaceEvent { SurfaceEvent(surface: Surface.notchPage, control: control, action: .pressed) }
+private func length(_ minutes: Double) -> SurfaceEvent { SurfaceEvent(surface: Surface.notchPage, control: "length", action: .changed(minutes)) }
 private let t0 = Date(timeIntervalSince1970: 1_000_000)
-
-@Test func lengthsCoverAMinuteToEightHours() {
-    #expect(Length.minutes(slider: 0) == 1)
-    #expect(Length.minutes(slider: 1) == 480)
-    #expect(Length.minutes(slider: Length.slider(minutes: 25)) == 25)
-    #expect(Length.minutes(slider: Length.slider(minutes: 90)) == 90)
-    #expect(Length.step(59, by: 1) == 60)
-    #expect(Length.step(60, by: 1) == 65)
-    #expect(Length.step(62, by: 1) == 65)
-    #expect(Length.step(65, by: -1) == 60)
-    #expect(Length.step(60, by: -1) == 59)
-    #expect(Length.step(1, by: -1) == 1)
-    #expect(Length.step(480, by: 1) == 480)
-}
 
 @Test func clockReadsLikeATimer() {
     #expect(clock(1500) == "25:00")
@@ -29,12 +16,14 @@ private let t0 = Date(timeIntervalSince1970: 1_000_000)
 
 @Test func eachModeKeepsItsOwnLength() {
     var model = PomodoroModel()
-    model.handle(press("longer"), now: t0)
+    model.handle(length(26), now: t0)
     #expect(model.saved.focusMinutes == 26)
     model.handle(press("mode-rest"), now: t0)
-    model.handle(SurfaceEvent(surface: Surface.notchPage, control: "length", action: .changed(Length.slider(minutes: 10))), now: t0)
+    model.handle(length(10), now: t0)
     #expect(model.saved.breakMinutes == 10)
     #expect(model.saved.focusMinutes == 26)
+    model.handle(length(900), now: t0)
+    #expect(model.saved.breakMinutes == 480)
 }
 
 @Test func pauseHoldsTheTimeAndResumeCarriesOn() {
@@ -44,27 +33,18 @@ private let t0 = Date(timeIntervalSince1970: 1_000_000)
     #expect(model.saved.run?.remaining(at: t0 + 600) == 1440)
     #expect(model.saved.run?.reading(at: t0 + 600) == "24:00")
     // Lengths can't change under a running session.
-    model.handle(press("longer"), now: t0 + 60)
+    model.handle(length(40), now: t0 + 60)
     #expect(model.saved.focusMinutes == 25)
     model.handle(press("resume"), now: t0 + 600)
     #expect(model.saved.run?.remaining(at: t0 + 660) == 1380)
-    #expect(model.tick(now: t0 + 600 + 1439) == nil)
-    #expect(model.tick(now: t0 + 600 + 1440) == .focus)
+    #expect(model.tick(now: t0 + 600 + 1439).ended == nil)
+    #expect(model.tick(now: t0 + 600 + 1440).ended == .focus)
     // It keeps counting, as overtime, and says so only once.
-    #expect(model.tick(now: t0 + 600 + 1500) == nil)
+    #expect(model.tick(now: t0 + 600 + 1500).ended == nil)
     #expect(model.saved.run?.reading(at: t0 + 600 + 1462) == "+00:22")
     model.handle(press("next"), now: t0 + 2100)
     #expect(model.saved.run?.mode == .rest)
     #expect(model.saved.run?.total == 300)
-}
-
-@Test func moveOnAutomaticallyStartsTheNextSession() {
-    var model = PomodoroModel()
-    model.handle(SurfaceEvent(surface: Surface.settingsPage, control: "auto-continue", action: .toggled(true)), now: t0)
-    model.handle(press("start"), now: t0)
-    #expect(model.tick(now: t0 + 1500) == .focus)
-    #expect(model.saved.run?.mode == .rest)
-    #expect(model.saved.run?.overtime(at: t0 + 1500) == nil)
 }
 
 @Test func stopwatchCountsUpAndKeepsTheMode() {
@@ -72,7 +52,7 @@ private let t0 = Date(timeIntervalSince1970: 1_000_000)
     model.handle(press("mode-rest"), now: t0)
     model.handle(press("stopwatch"), now: t0)
     #expect(model.saved.run?.reading(at: t0 + 35.6) == "00:35")
-    #expect(model.tick(now: t0 + 9999) == nil)
+    #expect(model.tick(now: t0 + 9999).ended == nil)
     model.handle(press("next"), now: t0 + 40)
     #expect(model.saved.run?.mode == .stopwatch)
     model.handle(press("stop"), now: t0 + 41)
@@ -110,11 +90,6 @@ private let t0 = Date(timeIntervalSince1970: 1_000_000)
     #expect(model.saved.run != nil)
 }
 
-@Test func titleIsOnePlainLine() {
-    #expect(PomodoroModel.title(from: "# Write the report\nmore") == "Write the report")
-    #expect(PomodoroModel.title(from: String(repeating: "a", count: 90)).count == 60)
-}
-
 @Test func savedStateSurvivesMissingFields() throws {
     let saved = try JSONDecoder().decode(Saved.self, from: Data(#"{"focusMinutes": 50}"#.utf8))
     #expect(saved.focusMinutes == 50)
@@ -122,7 +97,7 @@ private let t0 = Date(timeIntervalSince1970: 1_000_000)
     // A setting from 0.1.0 that no longer reads ("off") falls back without losing the rest.
     let old = try JSONDecoder().decode(Saved.self, from: Data(#"{"focusMinutes": 40, "ambient": "off", "run": {"mode": "focus"}}"#.utf8))
     #expect(old.focusMinutes == 40)
-    #expect(old.ambient == .brown)
+    #expect(old.ambient == .rain)
     #expect(old.run == nil)
 }
 
@@ -137,7 +112,7 @@ private let t0 = Date(timeIntervalSince1970: 1_000_000)
 
 @Test func everySurfacePassesLedgesChecks() throws {
     var model = PomodoroModel()
-    model.saved.title = "Write the report"
+    model.saved.customReminders = ["Stretch"]
     var states: [PomodoroModel] = [model]
     model.handle(press("start"), now: t0); states.append(model)
     model.handle(press("pause"), now: t0 + 5); states.append(model)
@@ -146,7 +121,8 @@ private let t0 = Date(timeIntervalSince1970: 1_000_000)
     model.saved.showSeconds = false; states.append(model)
     model.handle(press("stop"), now: t0)
     model.handle(press("stopwatch"), now: t0); states.append(model)
-    model.editingTitle = true; states.append(model)
+    model.handle(press("stop"), now: t0)
+    model.handle(press("mode-rest"), now: t0); states.append(model)
     for state in states {
         try state.page(now: t0 + 10).validate()
         try state.widget(now: t0 + 10).validate()
@@ -154,4 +130,33 @@ private let t0 = Date(timeIntervalSince1970: 1_000_000)
         try state.lockScreenRow(now: t0 + 10)?.validate()
         try state.settingsPage().validate()
     }
+}
+
+@Test func remindersComeWhileWorkingAndOnlyOnceEach() {
+    var model = PomodoroModel()
+    model.handle(SurfaceEvent(surface: Surface.settingsPage, control: "eye-break", action: .toggled(true)), now: t0)
+    model.handle(SurfaceEvent(surface: Surface.settingsPage, control: "new-reminder", action: .edited("  Stretch ")), now: t0)
+    model.handle(SurfaceEvent(surface: Surface.settingsPage, control: "add-reminder", action: .pressed), now: t0)
+    #expect(model.saved.customReminders == ["Stretch"])
+    #expect(model.newReminder.isEmpty)
+    model.handle(length(60), now: t0)
+    model.handle(press("start"), now: t0)
+    #expect(model.tick(now: t0 + 1199).reminders.isEmpty)
+    #expect(model.tick(now: t0 + 1200).reminders.map(\.id) == ["eye-break"])
+    #expect(model.tick(now: t0 + 1260).reminders.isEmpty)
+    #expect(model.tick(now: t0 + 1800).reminders.map(\.message) == ["Stretch"])
+    // Not in a break.
+    model.handle(press("next"), now: t0 + 3600)
+    #expect(model.tick(now: t0 + 3600 + 1300).reminders.isEmpty)
+    model.handle(SurfaceEvent(surface: Surface.settingsPage, control: "remove-reminder:0", action: .pressed), now: t0)
+    #expect(model.saved.customReminders.isEmpty)
+}
+
+@Test func alwaysShowOffKeepsTheTimerOffTheNotch() {
+    var model = PomodoroModel()
+    model.handle(press("start"), now: t0)
+    #expect(model.activities(now: t0).count == 1)
+    model.handle(SurfaceEvent(surface: Surface.settingsPage, control: "always-show", action: .toggled(false)), now: t0)
+    #expect(model.activities(now: t0).isEmpty)
+    #expect(model.lockScreenRow(now: t0) != nil)
 }
