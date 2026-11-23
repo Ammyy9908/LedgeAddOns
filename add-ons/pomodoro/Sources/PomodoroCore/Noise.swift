@@ -1,6 +1,6 @@
 import Foundation
 
-/// Brown or pink noise, one sample at a time, from white noise. Brown is white noise integrated with a slight leak
+/// Brown, pink or white noise, one sample at a time, from white noise. Brown is white noise integrated with a slight leak
 /// so it never drifts off; pink is Paul Kellet's economy filter. Clamped to -1...1.
 public struct NoiseGenerator: Sendable {
     public var kind: Ambient
@@ -18,7 +18,7 @@ public struct NoiseGenerator: Sendable {
     private mutating func sample() -> Float {
         let white = whiteSample()
         switch kind {
-        case .off: return 0
+        case .white: return white * 0.4
         case .brown:
             brown = (brown + 0.02 * white) / 1.02
             return brown * 3.5

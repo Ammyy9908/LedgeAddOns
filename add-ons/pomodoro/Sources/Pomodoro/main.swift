@@ -7,17 +7,18 @@ import PomodoroCore
 // Pomodoro: a focus and break timer in the notch. Core builds every surface; this program keeps the clock, plays
 // the chime and the ambient noise, and sends what Core builds. Nothing leaves the Mac.
 
-/// Brown or pink noise on the Mac's output while a timer runs.
+/// Generated noise on the Mac's output while a session counts down.
 final class Ambience: @unchecked Sendable {
     private var engine: AVAudioEngine?
-    private var playing = Ambient.off
+    private var playing: Ambient?
 
-    func play(_ kind: Ambient) {
+    func play(_ kind: Ambient?, volume: Double) {
+        engine?.mainMixerNode.outputVolume = Float(volume)
         guard kind != playing else { return }
         engine?.stop()
         engine = nil
         playing = kind
-        guard kind != .off else { return }
+        guard let kind else { return }
         let engine = AVAudioEngine()
         let format = engine.outputNode.inputFormat(forBus: 0)
         var noise = NoiseGenerator(kind, seed: UInt64.random(in: 1...UInt64.max))
@@ -32,7 +33,7 @@ final class Ambience: @unchecked Sendable {
         }
         engine.attach(source)
         engine.connect(source, to: engine.mainMixerNode, format: AVAudioFormat(standardFormatWithSampleRate: format.sampleRate, channels: 1))
-        engine.mainMixerNode.outputVolume = 0.35
+        engine.mainMixerNode.outputVolume = Float(volume)
         do {
             try engine.start()
             self.engine = engine
@@ -60,10 +61,11 @@ actor Pomodoro {
 
     func stop() {
         ticker?.cancel()
-        ambience.play(.off)
+        ambience.play(nil, volume: 0)
     }
 
     func handle(_ event: SurfaceEvent) async {
+        if event.control == "preview-end-sound" { return playEndSound() }
         let before = model.saved
         model.handle(event, now: Date())
         // Ledge rebuilds the page each time it's sent, which would drop the length slider mid-drag; redraw once it rests.
@@ -96,14 +98,15 @@ actor Pomodoro {
             AddOnSession.show(model.settingsPage())
             do { try await LedgeHost.set(model.saved, forKey: "pomodoro") } catch { model.problem = "Couldn't save" }
         }
+        // Overtime and the stopwatch keep counting, so the clock runs while anything is unpaused.
         let running = model.saved.run.map { !$0.isPaused } ?? false
-        ambience.play(running ? model.saved.ambient : .off)
+        ambience.play(model.ambientPlaying(at: now) ? model.saved.ambient : nil, volume: model.saved.volume)
         if running, ticker == nil {
             ticker = Task {
                 while !Task.isCancelled {
                     // Wake as the shown second changes, rather than drift on a fixed beat.
-                    let left = self.secondsLeft()
-                    try? await Task.sleep(for: .seconds(max(0.05, left - (left.rounded(.up) - 1))))
+                    let elapsed = self.secondsElapsed()
+                    try? await Task.sleep(for: .seconds(max(0.05, 1 - elapsed.truncatingRemainder(dividingBy: 1))))
                     await self.tick()
                 }
             }
@@ -118,16 +121,17 @@ actor Pomodoro {
         if let ended { await announce(ended) }
     }
 
-    private func secondsLeft() -> TimeInterval { model.saved.run?.remaining(at: Date()) ?? 1 }
+    private func secondsElapsed() -> TimeInterval { model.saved.run?.elapsed(at: Date()) ?? 0 }
+
+    private func playEndSound() {
+        if model.saved.endSound != "None" { NSSound(named: model.saved.endSound)?.play() }
+    }
 
     private func announce(_ ended: Mode) async {
-        if model.saved.chime { NSSound(named: "Glass")?.play() }
+        playEndSound()
         guard model.saved.notice else { return }
-        let next = ended.next
-        let message = model.saved.autoContinue
-            ? "\(next.name) started: \(model.minutes(next)) min."
-            : "Start \(next == .rest ? "a break" : "focusing") from the notch when you're ready."
-        do { try await LedgeHost.notify(title: ended == .focus ? "Focus done" : "Break over", message: message, symbol: next.symbol) }
+        let notice = PomodoroModel.notice(for: ended, minutes: model.minutes(ended))
+        do { try await LedgeHost.notify(title: notice.title, message: notice.message, symbol: ended.symbol) }
         catch { AddOnSession.log("Notice unavailable", level: .info) }
     }
 }

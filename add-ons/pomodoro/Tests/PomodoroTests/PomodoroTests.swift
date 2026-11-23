@@ -42,6 +42,7 @@ private let t0 = Date(timeIntervalSince1970: 1_000_000)
     model.handle(press("start"), now: t0)
     model.handle(press("pause"), now: t0 + 60)
     #expect(model.saved.run?.remaining(at: t0 + 600) == 1440)
+    #expect(model.saved.run?.reading(at: t0 + 600) == "24:00")
     // Lengths can't change under a running session.
     model.handle(press("longer"), now: t0 + 60)
     #expect(model.saved.focusMinutes == 25)
@@ -49,8 +50,9 @@ private let t0 = Date(timeIntervalSince1970: 1_000_000)
     #expect(model.saved.run?.remaining(at: t0 + 660) == 1380)
     #expect(model.tick(now: t0 + 600 + 1439) == nil)
     #expect(model.tick(now: t0 + 600 + 1440) == .focus)
-    #expect(model.saved.run == nil)
-    #expect(model.saved.finished == .focus)
+    // It keeps counting, as overtime, and says so only once.
+    #expect(model.tick(now: t0 + 600 + 1500) == nil)
+    #expect(model.saved.run?.reading(at: t0 + 600 + 1462) == "+00:22")
     model.handle(press("next"), now: t0 + 2100)
     #expect(model.saved.run?.mode == .rest)
     #expect(model.saved.run?.total == 300)
@@ -62,20 +64,41 @@ private let t0 = Date(timeIntervalSince1970: 1_000_000)
     model.handle(press("start"), now: t0)
     #expect(model.tick(now: t0 + 1500) == .focus)
     #expect(model.saved.run?.mode == .rest)
-    #expect(model.saved.finished == nil)
+    #expect(model.saved.run?.overtime(at: t0 + 1500) == nil)
 }
 
-@Test func shortcutStartsPausesAndResumes() {
+@Test func stopwatchCountsUpAndKeepsTheMode() {
     var model = PomodoroModel()
-    let toggle = SurfaceEvent(surface: Surface.shortcut, control: "toggle", action: .pressed)
-    model.handle(toggle, now: t0)
-    #expect(model.saved.run?.isPaused == false)
-    model.handle(toggle, now: t0 + 1)
-    #expect(model.saved.run?.isPaused == true)
-    model.handle(toggle, now: t0 + 2)
-    #expect(model.saved.run?.isPaused == false)
-    model.handle(press("stop"), now: t0 + 3)
-    #expect(model.saved.run == nil)
+    model.handle(press("mode-rest"), now: t0)
+    model.handle(press("stopwatch"), now: t0)
+    #expect(model.saved.run?.reading(at: t0 + 35.6) == "00:35")
+    #expect(model.tick(now: t0 + 9999) == nil)
+    model.handle(press("next"), now: t0 + 40)
+    #expect(model.saved.run?.mode == .stopwatch)
+    model.handle(press("stop"), now: t0 + 41)
+    #expect(model.saved.mode == .rest)
+}
+
+@Test func ambientPlaysOnlyWhileCountingDown() {
+    var model = PomodoroModel()
+    model.handle(press("ambient"), now: t0)
+    #expect(model.saved.ambientOn)
+    model.handle(press("mode-rest"), now: t0)
+    model.handle(press("start"), now: t0)
+    #expect(model.ambientPlaying(at: t0 + 1))
+    model.handle(SurfaceEvent(surface: Surface.settingsPage, control: "ambient-in-breaks", action: .toggled(false)), now: t0)
+    #expect(!model.ambientPlaying(at: t0 + 1))
+    model.handle(SurfaceEvent(surface: Surface.settingsPage, control: "ambient-in-breaks", action: .toggled(true)), now: t0)
+    #expect(!model.ambientPlaying(at: t0 + 400))
+    model.handle(SurfaceEvent(surface: Surface.settingsPage, control: "volume", action: .changed(55)), now: t0)
+    #expect(model.saved.volume == 0.55)
+}
+
+@Test func secondsCanBeLeftOut() {
+    #expect(clock(1499, seconds: false) == "25m")
+    #expect(clock(30, seconds: false) == "1m")
+    #expect(clock(3900, seconds: false) == "1h 05m")
+    #expect(PomodoroModel.notice(for: .rest, minutes: 1).message == "Break is done · 1 minute Break finished")
 }
 
 @Test func startInstantlyOnlyWhenIdle() {
@@ -96,10 +119,15 @@ private let t0 = Date(timeIntervalSince1970: 1_000_000)
     let saved = try JSONDecoder().decode(Saved.self, from: Data(#"{"focusMinutes": 50}"#.utf8))
     #expect(saved.focusMinutes == 50)
     #expect(saved.breakMinutes == 5)
+    // A setting from 0.1.0 that no longer reads ("off") falls back without losing the rest.
+    let old = try JSONDecoder().decode(Saved.self, from: Data(#"{"focusMinutes": 40, "ambient": "off", "run": {"mode": "focus"}}"#.utf8))
+    #expect(old.focusMinutes == 40)
+    #expect(old.ambient == .brown)
+    #expect(old.run == nil)
 }
 
 @Test func noiseStaysInRange() {
-    for kind in [Ambient.brown, .pink] {
+    for kind in Ambient.allCases {
         var noise = NoiseGenerator(kind)
         let samples = (0..<48_000).map { _ in noise.next() }
         #expect(samples.allSatisfy { abs($0) <= 1 })
@@ -115,6 +143,9 @@ private let t0 = Date(timeIntervalSince1970: 1_000_000)
     model.handle(press("pause"), now: t0 + 5); states.append(model)
     model.handle(press("stop"), now: t0 + 5)
     model.handle(press("start"), now: t0); _ = model.tick(now: t0 + 1500); states.append(model)
+    model.saved.showSeconds = false; states.append(model)
+    model.handle(press("stop"), now: t0)
+    model.handle(press("stopwatch"), now: t0); states.append(model)
     model.editingTitle = true; states.append(model)
     for state in states {
         try state.page(now: t0 + 10).validate()
