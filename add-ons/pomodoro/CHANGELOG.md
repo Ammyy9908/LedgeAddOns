@@ -15,6 +15,7 @@ Newest version first. Every new `version` in addon.json needs an entry here.
 - A keyboard shortcut to start, pause and resume, set under Shortcuts.
 - An end sound picked from the macOS sounds, with a preview, or none.
 - Reminders while you work: eye break, drink water, stand up, and your own.
-- Ambient sound, switched on and off from the page: rain, ocean, stream, fireplace, or brown, pink or white noise,
-  generated on the Mac, with a preview, a volume and a choice to play during breaks.
+- Ambient sound, switched on and off from the page: macOS's own Background Sounds (Rain, Rain on Roof, Ocean,
+  Stream, Fireplace, Night, Brown, Pink and White Noise, Airplane, Train and more), with a preview, a volume and a
+  choice to play during breaks. A Mac without the sound plays generated noise instead.
 - Start as soon as you open it: opening the page starts your last timer.

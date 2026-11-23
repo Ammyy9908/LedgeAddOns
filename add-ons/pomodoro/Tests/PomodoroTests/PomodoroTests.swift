@@ -102,7 +102,7 @@ private let t0 = Date(timeIntervalSince1970: 1_000_000)
 }
 
 @Test func noiseStaysInRange() {
-    for kind in Ambient.allCases {
+    for kind in NoiseGenerator.Kind.allCases {
         var noise = NoiseGenerator(kind)
         let samples = (0..<48_000).map { _ in noise.next() }
         #expect(samples.allSatisfy { abs($0) <= 1 })
@@ -159,4 +159,13 @@ private let t0 = Date(timeIntervalSince1970: 1_000_000)
     model.handle(SurfaceEvent(surface: Surface.settingsPage, control: "always-show", action: .toggled(false)), now: t0)
     #expect(model.activities(now: t0).isEmpty)
     #expect(model.lockScreenRow(now: t0) != nil)
+}
+
+@Test func everyAmbientSoundNamesAMacOSFile() {
+    #expect(Ambient.rainOnRoof.file.lastPathComponent == "RainOnRoof.m4a")
+    #expect(Ambient.allCases.count == 16)
+    // On a Mac with Background Sounds, every file is there.
+    if FileManager.default.fileExists(atPath: Ambient.folder.path) {
+        for kind in Ambient.allCases { #expect(FileManager.default.fileExists(atPath: kind.file.path), "\(kind.file.lastPathComponent)") }
+    }
 }

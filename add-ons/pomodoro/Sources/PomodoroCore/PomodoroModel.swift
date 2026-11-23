@@ -7,12 +7,28 @@ public enum Mode: String, Codable, Sendable {
     public var next: Mode { self == .focus ? .rest : .focus }
 }
 
-/// Generated sound to play while a session runs.
+/// A sound to play while a session runs: macOS's own Background Sounds, in Droppy's order.
 public enum Ambient: String, Codable, Sendable, CaseIterable {
-    case rain, ocean, stream, fireplace, brown, pink, white
+    case rain, rainOnRoof, ocean, stream, fire, night, quietNight, brownNoise, pinkNoise, whiteNoise, airplane, babble, boat, bus,
+         steam, train
     public var name: String {
-        ["rain": "Rain", "ocean": "Ocean", "stream": "Stream", "fireplace": "Fireplace", "brown": "Brown Noise",
-         "pink": "Pink Noise", "white": "White Noise"][rawValue]!
+        ["rain": "Rain", "rainOnRoof": "Rain on Roof", "ocean": "Ocean", "stream": "Stream", "fire": "Fireplace", "night": "Night",
+         "quietNight": "Quiet Night", "brownNoise": "Brown Noise", "pinkNoise": "Pink Noise", "whiteNoise": "White Noise",
+         "airplane": "Airplane", "babble": "Babble", "boat": "Boat", "bus": "Bus", "steam": "Steam", "train": "Train"][rawValue]!
+    }
+
+    /// Where macOS keeps the Background Sounds (System Settings › Accessibility › Audio), each a short seamless loop.
+    public static let folder = URL(fileURLWithPath: "/System/Library/PrivateFrameworks/HearingUtilities.framework/Versions/A/Resources")
+    /// This sound's file, such as RainOnRoof.m4a.
+    public var file: URL { Self.folder.appendingPathComponent(rawValue.prefix(1).uppercased() + rawValue.dropFirst() + ".m4a") }
+
+    /// The noise generated instead when this Mac doesn't have the file.
+    public var fallback: NoiseGenerator.Kind {
+        switch self {
+        case .pinkNoise, .rain, .stream, .steam: .pink
+        case .whiteNoise: .white
+        default: .brown
+        }
     }
 }
 

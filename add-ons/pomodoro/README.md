@@ -27,19 +27,21 @@ countdown beside the notch while you work.
 - **More options**: **Show seconds in the notch** (off reads 25m).
 - **Reminders**: Eye break (every 20 minutes), Drink water (30), Stand up (hourly), and your own reminders, every
   30 minutes. They come during focus sessions and stopwatches, not breaks.
-- **Ambient sound**: on or off; Rain, Ocean, Stream, Fireplace, Brown, Pink or White Noise, with **Play**; the
-  volume; and whether it plays during breaks.
+- **Ambient sound**: on or off; one of macOS's Background Sounds (the ones in System Settings › Accessibility ›
+  Audio: Rain, Rain on Roof, Ocean, Stream, Fireplace, Night, Quiet Night, Brown, Pink and White Noise, Airplane,
+  Babble, Boat, Bus, Steam, Train), with **Play**; the volume; and whether it plays during breaks.
 
 ## What it does on your Mac
 
 Pomodoro keeps its lengths, settings and the running session (as its end time) in Ledge's settings for the add-on, so a
-timer survives Ledge restarting. Ambient sound is generated on the Mac and played on the current output; the end sound is
+timer survives Ledge restarting. Ambient sound is macOS's own Background Sounds, read from the system and played on the current output (generated noise
+on a Mac without them); the end sound is
 one of the macOS system sounds. It reads nothing else and sends nothing anywhere.
 
 ## What it can't do
 
-- Its rain, ocean and other scenes are generated, not recordings, and there's no airplane, train or other recorded
-  sound.
+- The Background Sounds are read from a folder inside macOS that Apple doesn't document, so a future macOS could move
+  them; Pomodoro then plays generated noise.
 - It can't follow timers set in Apple's Clock app or turn on a macOS Focus.
 - The timer can't appear only when you hover over the notch: it shows beside the notch for the whole session, or not
   at all.

@@ -7,7 +7,8 @@ import PomodoroCore
 // Pomodoro: a focus and break timer in the notch. Core builds every surface; this program keeps the clock, plays
 // the end sound, the ambient sound and the reminders, and sends what Core builds. Nothing leaves the Mac.
 
-/// Generated noise on the Mac's output while a session counts down.
+/// The ambient sound on the Mac's output while a session counts down: macOS's Background Sounds file, looped without
+/// a gap, or generated noise when this Mac doesn't have it.
 final class Ambience: @unchecked Sendable {
     private var engine: AVAudioEngine?
     private var playing: Ambient?
@@ -20,19 +21,33 @@ final class Ambience: @unchecked Sendable {
         playing = kind
         guard let kind else { return }
         let engine = AVAudioEngine()
-        let format = engine.outputNode.inputFormat(forBus: 0)
-        var noise = NoiseGenerator(kind, sampleRate: format.sampleRate, seed: UInt64.random(in: 1...UInt64.max))
-        let source = AVAudioSourceNode { _, _, frames, buffers -> OSStatus in
-            for frame in 0..<Int(frames) {
-                let sample = noise.next()
-                for buffer in UnsafeMutableAudioBufferListPointer(buffers) {
-                    buffer.mData?.assumingMemoryBound(to: Float.self)[frame] = sample
+        if let buffer = Self.loop(kind.file) {
+            let player = AVAudioPlayerNode()
+            engine.attach(player)
+            engine.connect(player, to: engine.mainMixerNode, format: buffer.format)
+            player.scheduleBuffer(buffer, at: nil, options: .loops)
+            start(engine, volume: volume)
+            player.play()
+        } else {
+            AddOnSession.log("\(kind.name) isn't on this Mac; playing generated noise", level: .info)
+            var noise = NoiseGenerator(kind.fallback, seed: UInt64.random(in: 1...UInt64.max))
+            let source = AVAudioSourceNode { _, _, frames, buffers -> OSStatus in
+                for frame in 0..<Int(frames) {
+                    let sample = noise.next()
+                    for buffer in UnsafeMutableAudioBufferListPointer(buffers) {
+                        buffer.mData?.assumingMemoryBound(to: Float.self)[frame] = sample
+                    }
                 }
+                return noErr
             }
-            return noErr
+            engine.attach(source)
+            let rate = engine.outputNode.inputFormat(forBus: 0).sampleRate
+            engine.connect(source, to: engine.mainMixerNode, format: AVAudioFormat(standardFormatWithSampleRate: rate, channels: 1))
+            start(engine, volume: volume)
         }
-        engine.attach(source)
-        engine.connect(source, to: engine.mainMixerNode, format: AVAudioFormat(standardFormatWithSampleRate: format.sampleRate, channels: 1))
+    }
+
+    private func start(_ engine: AVAudioEngine, volume: Double) {
         engine.mainMixerNode.outputVolume = Float(volume)
         do {
             try engine.start()
@@ -40,6 +55,14 @@ final class Ambience: @unchecked Sendable {
         } catch {
             AddOnSession.log("Ambient sound couldn't start", level: .error)
         }
+    }
+
+    /// The whole file in memory, so it loops seamlessly.
+    private static func loop(_ url: URL) -> AVAudioPCMBuffer? {
+        guard let file = try? AVAudioFile(forReading: url),
+              let buffer = AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: AVAudioFrameCount(file.length)),
+              (try? file.read(into: buffer)) != nil else { return nil }
+        return buffer
     }
 }
 

@@ -148,7 +148,7 @@ extension PomodoroModel {
                 .slider("volume", "Volume", range: 0...100, step: 5, value: (saved.volume * 100).rounded(), unit: "%"),
                 .toggle("ambient-in-breaks", "Play during breaks", isOn: saved.ambientInBreaks),
             ]),
-        ], keywords: ["focus", "break", "timer", "pomodoro", "countdown", "stopwatch", "reminders", "rain", "ocean", "brown noise",
-                      "white noise"])
+        ], keywords: ["focus", "break", "timer", "pomodoro", "countdown", "stopwatch", "reminders", "rain", "ocean", "fireplace",
+                      "background sounds", "brown noise", "white noise"])
     }
 }
