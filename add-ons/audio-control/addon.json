@@ -1,6 +1,6 @@
 {
     "id": "audio-control",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "protocolVersion": 2,
     "name": "Audio Control",
     "summary": "A volume slider for each app",
@@ -15,8 +15,12 @@
         "widget",
         "settings-page",
         "shortcut",
-        "activity"
+        "activity",
+        "iphone"
     ],
+    "iphone": {
+        "group": "mac-controls"
+    },
     "kit": {
         "minAPI": "0.22.0"
     },

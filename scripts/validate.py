@@ -73,6 +73,7 @@ def retired_ids():
 NAME = re.compile(r"[a-z0-9][a-z0-9-]{0,63}")
 RELEASE_VERSION = re.compile(r"\d+\.\d+\.\d+")
 CATEGORIES = {"AI", "Productivity", "Media", "Capture", "Files", "System"}
+IPHONE_GROUPS = {"mac-controls", "focus", "glance", "notes"}
 
 
 def check_manifest_v2(manifest, say):
@@ -101,6 +102,16 @@ def check_manifest_v2(manifest, say):
         say(f"category must be one of {', '.join(sorted(CATEGORIES))}")
     if "creator" in manifest and not str((manifest["creator"] or {}).get("name", "")).strip():
         say("creator needs a name")
+    surfaces = manifest.get("surfaces", []) if isinstance(manifest.get("surfaces"), list) else []
+    if "iphone" in surfaces:
+        if "widget" not in surfaces:
+            say("the iphone surface shows the add-on's widget, so it needs the widget surface too")
+        if (manifest.get("iphone") or {}).get("group") not in IPHONE_GROUPS:
+            say(f"iphone.group must be one of {', '.join(sorted(IPHONE_GROUPS))}")
+        if "terminal" in manifest.get("capabilities", []):
+            say("an add-on with the terminal capability can't show on iPhone")
+    elif "iphone" in manifest:
+        say("iphone needs the iphone surface in surfaces")
     keywords = manifest.get("keywords", [])
     if not isinstance(keywords, list) or len(keywords) > 20 or any(len(str(k)) > 40 for k in keywords):
         say("keywords: at most 20, each at most 40 characters")

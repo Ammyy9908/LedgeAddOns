@@ -2,6 +2,12 @@
 
 Newest version first. Every new `version` in addon.json needs an entry here.
 
+## 0.1.1
+
+- Shows its widget as a tile in the Ledge iPhone app's Droplets, under Mac controls.
+- The widget lists only apps playing sound now. Paused apps keep their rows on the page in the notch.
+- A level changed in one place, the notch or the iPhone, now shows in the others too.
+
 ## 0.1.0
 
 - A page in the notch's Add-ons tab, and a widget for Home, with a row for each app that's playing sound: its icon,
