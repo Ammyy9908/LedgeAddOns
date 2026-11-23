@@ -163,15 +163,20 @@ actor AudioControl {
         let rows = apps.values.filter { $0.playing || showPaused || taps[$0.id] != nil || $0.id == AudioApps.systemSounds }
             .sorted { (rank($0), $0.name.lowercased()) < (rank($1), $1.name.lowercased()) }
             .prefix(Self.maximumRows).map(\.id)
-        guard rows != shown else { return }
-        shown = rows
+        let playing = rows.filter { apps[$0]?.playing == true }
+        // The widget lists only playing apps, so an app starting or stopping redraws it too; the levels are in the
+        // key so a change made on one surface (the notch, the iPhone) reaches the others.
+        let key = rows + ["|"] + playing + ["|"] + rows.map { String(level($0)) }
+        guard key != shown else { return }
+        shown = key
         AddOnSession.show(settingsPage())
         let sliders = self.sliders(rows)
         let mics = PageAction("mics", symbol: micsMuted ? "mic.slash.fill" : "mic.fill",
                               label: micsMuted ? "Unmute microphones" : "Mute microphones")
         AddOnSession.show(notchPage: NotchPage(title: "Audio Control", symbol: "speaker.wave.2.fill", size: .large,
                                                screen: PageScreen("main", actions: [mics], content: page(sliders))))
-        AddOnSession.show(widgets: [widget(Array(sliders.prefix(Self.widgetRows)))])
+        // Paused apps stay on the page, where there's room; the widget is for what's playing now.
+        AddOnSession.show(widgets: [widget(self.sliders(Array(playing.prefix(Self.widgetRows))))])
     }
 
     /// Outputs and microphones came or went: learn new outputs' names, switch to a preferred one that connected,
