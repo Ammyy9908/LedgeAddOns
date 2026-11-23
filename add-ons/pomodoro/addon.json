@@ -1,0 +1,32 @@
+{
+    "id": "pomodoro",
+    "version": "0.1.0",
+    "protocolVersion": 2,
+    "name": "Focus Timer",
+    "summary": "A focus and break timer in the notch",
+    "description": "Pick Focus or Break, drag the minute tape to any length and start the timer from the notch, or start a stopwatch. The time runs in large digits on the page, beside the notch, on the lock screen and on a Home widget that also shows on your iPhone. When a session ends it sounds, shows a notice and counts overtime until you start the next one. Add reminders and play macOS's Background Sounds while you work.",
+    "author": "Sumit",
+    "capabilities": [
+        "hud"
+    ],
+    "surfaces": [
+        "notch-page",
+        "widget",
+        "settings-page",
+        "activity",
+        "lock-screen-row",
+        "shortcut",
+        "iphone"
+    ],
+    "iphone": {
+        "group": "focus"
+    },
+    "kit": {
+        "minAPI": "0.26.0"
+    },
+    "minMacOS": "14.0",
+    "executable": "Pomodoro",
+    "icon": "Assets/Icon.png",
+    "category": "Productivity",
+    "keywords": ["pomodoro", "focus", "timer", "break", "countdown", "productivity", "brown noise", "stopwatch", "white noise", "reminders", "rain"]
+}
