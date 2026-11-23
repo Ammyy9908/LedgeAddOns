@@ -1,0 +1,32 @@
+{
+    "id": "pomodoro",
+    "version": "0.1.0",
+    "protocolVersion": 2,
+    "name": "Pomodoro",
+    "summary": "A focus and break timer in the notch",
+    "description": "Pick Focus or Break, set any length from a minute to eight hours and start the timer from the notch. The countdown runs beside the notch with a progress ring, on the lock screen and on a Home widget that also shows on your iPhone. Pause, resume or stop it from any of them or with a keyboard shortcut. Give a session a title, play brown or pink noise while it runs, and hear a chime when it ends.",
+    "author": "Sumit",
+    "capabilities": [
+        "hud"
+    ],
+    "surfaces": [
+        "notch-page",
+        "widget",
+        "settings-page",
+        "activity",
+        "lock-screen-row",
+        "shortcut",
+        "iphone"
+    ],
+    "iphone": {
+        "group": "focus"
+    },
+    "kit": {
+        "minAPI": "0.25.0"
+    },
+    "minMacOS": "14.0",
+    "executable": "Pomodoro",
+    "icon": "Assets/Icon.png",
+    "category": "Productivity",
+    "keywords": ["pomodoro", "focus", "timer", "break", "countdown", "productivity", "brown noise"]
+}

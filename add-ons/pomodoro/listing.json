@@ -1,0 +1,10 @@
+{
+  "developer": "Sumit",
+  "category": "Productivity",
+  "availability": "Free · needs a Ledge with LedgeKit 0.25 · macOS 14 or later",
+  "description": "Pomodoro is a focus and break timer in the notch. Choose Focus or Break, set any length from a minute to eight hours, and start it from the notch; each mode remembers its own length. While it runs, the countdown sits beside the notch with a progress ring, on the lock screen and on a Home widget that's also a tile on your iPhone, under Focus. Pause, resume or stop from any of them, or start and pause with a keyboard shortcut. Give a session a title, play brown or pink noise while it runs, and hear a chime and see a notice when it ends, with a button to start the next session or a setting to move on by itself. Everything stays on your Mac.",
+  "feedbackURL": "https://github.com/Ammyy9908/LedgeAddOns/issues/new",
+  "screenshots": [
+    "Store/Page.png"
+  ]
+}
