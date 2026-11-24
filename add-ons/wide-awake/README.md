@@ -7,13 +7,13 @@ needs the Mac awake.
 
 - **The page**: open Wide Awake in the notch's Add-ons pill. Choose **Display** (the screen and the Mac stay awake)
   or **System** (the Mac stays awake, the screen can dim and turn off), drag the minute tape to a length from a
-  minute to a day, then **Stay Awake**. The **∞** button keeps it awake until you stop it.
+  minute to a day (the page shows when it would end, like "until 4:19 PM"), then **Stay Awake**. The **∞** button keeps it awake until you stop it.
 - **While it runs**: × stops it, **+15** adds 15 minutes. The time left turns yellow in the last 15 minutes and red
   in the last 5. When a timer runs out you get a "Wide Awake is off" notice and the Mac sleeps as usual again.
 - **Elsewhere**: the time sits beside the notch with a progress ring, on the lock screen, and on the Wide Awake
   widget, which also shows on iPhone in Droplets under Mac controls. Set a keyboard shortcut under Shortcuts to
   start and stop without opening anything.
-- **AI apps**: an AI app connected to Ledge can call `keep_awake_start` (minutes, mode), `keep_awake_stop` and
+- **AI apps**: an AI app connected to Ledge can call `keep_awake_start` (minutes, or until a time like 18:30, and mode), `keep_awake_stop` and
   `keep_awake_status`.
 
 ## Settings
