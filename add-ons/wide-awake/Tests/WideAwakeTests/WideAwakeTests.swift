@@ -61,11 +61,19 @@ private let t0 = Date(timeIntervalSince1970: 1_000_000)
     #expect(model.holding(at: t0) == .display)
 }
 
+private func utc() -> Calendar {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = TimeZone(identifier: "UTC")!
+    calendar.locale = Locale(identifier: "en_US")
+    return calendar
+}
+
 @Test func aiToolsStartStopAndReport() throws {
     var model = WideAwakeModel()
+    model.calendar = utc()
     try AddOnTool.validate(WideAwakeModel.tools)
     let started = try model.tool(ToolCall(tool: "keep_awake_start", arguments: ["minutes": .number(90), "mode": .string("system")]), now: t0)
-    #expect(started == .text("The Mac is being kept awake (the Mac stays awake, the screen can turn off) for 1 hour 30 minutes more."))
+    #expect(started == .text("The Mac is being kept awake (the Mac stays awake, the screen can turn off) until 3:16\u{202F}PM, 1 hour 30 minutes from now."))
     #expect(model.saved.session?.until == t0 + 90 * 60)
     // The page keeps the person's own length and mode.
     #expect(model.saved.minutes == 60 && model.saved.mode == .display)
@@ -95,4 +103,25 @@ private let t0 = Date(timeIntervalSince1970: 1_000_000)
     model.handle(press("forever"), now: t0)
     #expect(model.activities(now: t0).first?.progress == .indeterminate)
     #expect(model.widget(now: t0).id == "wide-awake")
+}
+
+@Test func untilATimeOfDay() throws {
+    var model = WideAwakeModel()
+    model.calendar = utc()
+    // t0 is 1970-01-12 13:46:40 UTC.
+    #expect(model.time("18:30", after: t0) == t0 + (4 * 3600 + 43 * 60 + 20))
+    #expect(model.time("6:30 pm", after: t0) == model.time("18:30", after: t0))
+    #expect(model.time("6pm", after: t0) == t0 + (4 * 3600 + 13 * 60 + 20))
+    #expect(model.time("9 a.m.", after: t0) == t0 + (19 * 3600 + 13 * 60 + 20))
+    #expect(model.time("13:46", after: t0) == t0 + (86_400 - 40))
+    #expect(model.time("25:00", after: t0) == nil)
+    #expect(model.time("13 pm", after: t0) == nil)
+    #expect(model.time("soon", after: t0) == nil)
+
+    let reply = try model.tool(ToolCall(tool: "keep_awake_start", arguments: ["until": .string("6:30 pm")]), now: t0)
+    #expect(model.saved.session?.until == t0 + (4 * 3600 + 43 * 60 + 20))
+    #expect(reply == .text("The Mac is being kept awake (the screen and the Mac stay awake) until 6:30\u{202F}PM, 4 hours 44 minutes from now."))
+    #expect(model.saved.minutes == 60)
+    var other = model
+    #expect(throws: AddOnError.self) { _ = try other.tool(ToolCall(tool: "keep_awake_start", arguments: ["until": .string("later")]), now: t0) }
 }

@@ -22,6 +22,9 @@ extension WideAwakeModel {
         let note: PageNode = problem.map { .text($0, style: .caption) }
             ?? reasons.first.map { .text($0, style: .secondary) }
             ?? .display(clock(TimeInterval(saved.minutes * 60)), tint: .orange)
+        // When the timer would end. The program refreshes the open page every second, so it stays right.
+        let ends: PageNode? = problem == nil && reasons.isEmpty
+            ? .text("until " + clockTime(now.addingTimeInterval(TimeInterval(saved.minutes * 60))), style: .secondary) : nil
         return .vstack(spacing: 8, children: [
             .hstack(spacing: 6, children: [
                 .spacer,
@@ -35,8 +38,7 @@ extension WideAwakeModel {
                 .control(PageButton("start", title: "Stay Awake", role: .accent, tint: .orange)),
                 .control(PageButton("forever", title: "", role: .secondary, symbol: "infinity", accessibilityLabel: "Stay awake until stopped")),
                 .spacer,
-                note,
-            ]),
+            ] + (ends.map { [$0] } ?? []) + [note]),
         ])
     }
 
@@ -47,7 +49,7 @@ extension WideAwakeModel {
         }
         return .hstack(spacing: 8, children: buttons.map(PageNode.control) + [
             .spacer,
-            .text(session.mode.name, style: .secondary),
+            .text(session.until.map { "Until " + clockTime($0) } ?? session.mode.name, style: .secondary),
             .display(reading(session, now: now), tint: tint(at: now)),
         ])
     }

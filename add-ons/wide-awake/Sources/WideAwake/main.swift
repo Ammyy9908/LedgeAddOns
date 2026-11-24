@@ -124,7 +124,7 @@ actor WideAwake {
     func visibility(_ visible: SurfaceVisibility) async {
         let opened = visible.isVisible(Surface.notchPage) && !pageOpen
         pageOpen = visible.isVisible(Surface.notchPage)
-        guard opened else { return }
+        guard opened else { return schedule() }
         let before = model.saved
         model.opened(now: Date())
         await update(since: before)
@@ -161,7 +161,8 @@ actor WideAwake {
 
     /// A one-second clock while a timer counts down, and a look at the triggers every 15 seconds while any is on.
     private func schedule() {
-        let counting = model.saved.session?.until != nil
+        // The open page shows when a timer would end, so it ticks too.
+        let counting = model.saved.session?.until != nil || pageOpen
         if counting, ticker == nil {
             ticker = Task {
                 while !Task.isCancelled {

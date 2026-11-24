@@ -111,6 +111,8 @@ public func spoken(_ seconds: TimeInterval) -> String {
 public struct WideAwakeModel: Sendable {
     public var saved = Saved()
     public var conditions = Conditions()
+    /// For reading and showing times of day; tests set a fixed one.
+    public var calendar = Calendar.current
     public var problem: String?
 
     public init(saved: Saved = Saved()) { self.saved = saved }
@@ -203,9 +205,11 @@ public struct WideAwakeModel: Sendable {
 
     public static let tools = [
         AddOnTool("keep_awake_start", title: "Keep the Mac awake",
-                  summary: "Keeps the Mac from sleeping, for the given minutes or until stopped when minutes is omitted. Mode display keeps the screen on too; system lets the screen turn off. Replaces any running timer.",
+                  summary: "Keeps the Mac from sleeping for the given minutes, until a time of day, or until stopped when neither is given. Mode display keeps the screen on too; system lets the screen turn off. Replaces any running timer.",
                   arguments: [.init("minutes", summary: "How long, 1 to 1440 (24 hours). Omit to stay awake until stopped.",
                                     kind: .number(minimum: 1, maximum: 1440, whole: true), required: false),
+                              .init("until", summary: "A time of day on the Mac's clock, like 18:30 or 6:30 pm; tomorrow if it has passed today. Use instead of minutes.",
+                                    kind: .text(maximumLength: 12), required: false),
                               .init("mode", summary: "display (default) or system.", kind: .choice(["display", "system"]), required: false)]),
         AddOnTool("keep_awake_stop", title: "Let the Mac sleep again",
                   summary: "Stops a running keep-awake timer. Automatic triggers the person turned on in Settings still apply."),
@@ -216,7 +220,14 @@ public struct WideAwakeModel: Sendable {
     public mutating func tool(_ call: ToolCall, now: Date) throws -> ToolResult {
         switch call.tool {
         case "keep_awake_start":
-            start(minutes: call.number("minutes").map { Int($0) }, mode: call.text("mode").flatMap(Mode.init) ?? saved.mode, now: now)
+            let mode = call.text("mode").flatMap(Mode.init) ?? saved.mode
+            if let text = call.text("until") {
+                guard let end = time(text, after: now) else { throw AddOnError("Wide Awake reads until as a time like 18:30 or 6:30 pm.") }
+                start(minutes: Int((end.timeIntervalSince(now) / 60).rounded(.up)), mode: mode, now: now)
+                saved.session?.until = end
+            } else {
+                start(minutes: call.number("minutes").map { Int($0) }, mode: mode, now: now)
+            }
             return .text(status(at: now))
         case "keep_awake_stop":
             saved.session = nil
@@ -228,10 +239,34 @@ public struct WideAwakeModel: Sendable {
         }
     }
 
+    /// The next `text` o'clock after `now`, like "18:30", "6:30 pm" or "6pm"; nil when it isn't a time.
+    func time(_ text: String, after now: Date) -> Date? {
+        let pattern = /^\s*(\d{1,2})(?:[:.](\d{2}))?\s*([ap])?\.?\s*(?:m\.?)?\s*$/.ignoresCase()
+        guard let match = try? pattern.wholeMatch(in: text), var hour = Int(match.1) else { return nil }
+        let minute = match.2.flatMap { Int($0) } ?? 0
+        if let half = match.3?.lowercased() {
+            guard (1...12).contains(hour) else { return nil }
+            hour = hour % 12 + (half == "p" ? 12 : 0)
+        }
+        guard (0...23).contains(hour), (0...59).contains(minute) else { return nil }
+        return calendar.nextDate(after: now, matching: DateComponents(hour: hour, minute: minute, second: 0), matchingPolicy: .nextTime)
+    }
+
+    /// A time of day as this Mac shows it, like "4:19 PM".
+    public func clockTime(_ date: Date) -> String {
+        let format = DateFormatter()
+        format.calendar = calendar
+        format.timeZone = calendar.timeZone
+        format.locale = calendar.locale ?? .current
+        format.dateStyle = .none
+        format.timeStyle = .short
+        return format.string(from: date)
+    }
+
     /// One sentence on what's happening, for the AI tools.
     public func status(at now: Date) -> String {
         if let session = saved.session {
-            let length = session.remaining(at: now).map { "for " + spoken($0) + " more" } ?? "until it's stopped"
+            let length = session.until.map { "until \(clockTime($0)), " + spoken($0.timeIntervalSince(now)) + " from now" } ?? "until it's stopped"
             return "The Mac is being kept awake (\(session.mode.phrase)) \(length)."
         }
         if let mode = holding(at: now) {

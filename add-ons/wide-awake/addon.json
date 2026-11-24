@@ -1,13 +1,14 @@
 {
     "id": "wide-awake",
-    "version": "0.1.1",
+    "version": "0.2.0",
     "protocolVersion": 2,
     "name": "Wide Awake",
     "summary": "Keep your Mac awake from the notch",
     "description": "Keep the screen and the Mac awake, or only the Mac, for as long as you drag the minute tape to, or until you stop it. The time left shows in large digits on the page, beside the notch, on the lock screen and on a Home widget that also shows on your iPhone, and turns yellow then red as it runs out. Wide Awake can also keep the Mac awake on its own while it's plugged in, while another display is connected, while a file downloads, while printing, while a coding agent runs or while apps you choose are open. AI apps can start and stop it too. It uses macOS's own power assertions, which end when Wide Awake does.",
     "author": "Sumit",
     "capabilities": [
-        "hud"
+        "hud",
+        "keep-awake"
     ],
     "surfaces": [
         "notch-page",
