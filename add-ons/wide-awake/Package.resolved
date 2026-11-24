@@ -3,7 +3,7 @@
   "pins" : [
     {
       "identity" : "ledgekit",
-      "kind" : "localSourceControl",
+      "kind" : "remoteSourceControl",
       "location" : "https://github.com/Ammyy9908/LedgeKit.git",
       "state" : {
         "revision" : "e72efa0d20aa2c73afd4ef4f67f443981ae4e902",
