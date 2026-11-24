@@ -5,6 +5,7 @@ Newest version first. Every new `version` in addon.json needs an entry here.
 ## 0.2.0
 
 - The page shows when a timer would end as you drag the tape ("until 4:19 PM"), and while it runs.
+- Asks for the new keep-awake capability, so Ledge's install sheet says it can keep the Mac awake.
 - AI apps can keep the Mac awake until a time of day: `keep_awake_start` takes `until`, like 18:30 or 6:30 pm.
 
 ## 0.1.1
