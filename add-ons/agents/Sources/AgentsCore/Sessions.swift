@@ -1,7 +1,18 @@
 import Foundation
 
-/// One Claude Code session, as its hooks describe it.
+/// One coding agent's session: Claude Code's as its hooks describe it, Codex's as its session log does.
 public struct AgentSession: Equatable, Sendable, Codable {
+    public enum Agent: String, Equatable, Sendable, Codable {
+        case claude, codex, cursor
+        public var name: String {
+            switch self {
+            case .claude: "Claude"
+            case .codex: "Codex"
+            case .cursor: "Cursor"
+            }
+        }
+    }
+
     public enum State: Equatable, Sendable, Codable {
         /// Started, no prompt yet.
         case ready
@@ -27,6 +38,18 @@ public struct AgentSession: Equatable, Sendable, Codable {
     public var added = 0
     public var removed = 0
     public var updated: Date
+    /// What the person last asked, on one line.
+    public var prompt: String?
+    /// What the agent last said: its reply, or its words between tools.
+    public var message: String?
+    /// Nil for Claude Code, so boards saved before Codex came along still load.
+    var agentKind: Agent?
+
+    /// Which agent the session belongs to.
+    public var agent: Agent {
+        get { agentKind ?? .claude }
+        set { agentKind = newValue == .claude ? nil : newValue }
+    }
 }
 
 public struct Step: Equatable, Sendable, Codable {
@@ -51,7 +74,7 @@ public struct Card: Equatable, Sendable, Codable {
 /// Every session Ledge heard from, kept up to date from hook events. Saved, so a restart of Ledge or the add-on
 /// doesn't empty the page until the next hook.
 public struct SessionBoard: Sendable, Codable {
-    public private(set) var sessions: [String: AgentSession] = [:]
+    public internal(set) var sessions: [String: AgentSession] = [:]
 
     public init() {}
 
@@ -76,6 +99,8 @@ public struct SessionBoard: Sendable, Codable {
         case "SessionStart":
             if session.state == .done { session.state = .ready; session.step = "Ready" }
         case "UserPromptSubmit":
+            session.prompt = Self.line(Self.typed(event["prompt"] as? String), limit: 200)
+            session.message = nil
             session.state = .working
             session.step = "Thinking"
             session.steps = []
@@ -108,6 +133,7 @@ public struct SessionBoard: Sendable, Codable {
             default: break
             }
         case "Stop":
+            if let said = Self.line(event["last_assistant_message"] as? String, limit: 400) { session.message = said }
             session.state = .done
             session.step = "Done"
             for index in session.steps.indices { session.steps[index].done = true }
@@ -129,6 +155,22 @@ public struct SessionBoard: Sendable, Codable {
         sessions[id] = session
     }
 
+    /// What the person typed, without the `<system-reminder>` blocks Claude Code puts around a prompt.
+    static func typed(_ prompt: String?) -> String? {
+        prompt?.replacingOccurrences(of: "<system-reminder>[\\s\\S]*?</system-reminder>", with: " ", options: .regularExpression)
+    }
+
+    /// Text on one line, cut to `limit`; nil when there's nothing.
+    static func line(_ text: String?, limit: Int) -> String? {
+        guard let text else { return nil }
+        let joined = text.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        guard !joined.isEmpty else { return nil }
+        return joined.count > limit ? String(joined.prefix(limit - 1)) + "…" : joined
+    }
+
+    /// Forgets one session, before its log is read again from the start.
+    public mutating func remove(_ id: String) { sessions[id] = nil }
+
     /// Forgets sessions that went quiet, such as ones whose terminal closed without a SessionEnd.
     public mutating func forget(quietSince date: Date) {
         sessions = sessions.filter { $0.value.updated >= date }
@@ -136,9 +178,9 @@ public struct SessionBoard: Sendable, Codable {
 
     static let keptSteps = 20
 
-    static func folder(_ cwd: String) -> String {
+    static func folder(_ cwd: String, or fallback: String = "Claude Code") -> String {
         let name = (cwd as NSString).lastPathComponent
-        return name.isEmpty || name == "/" ? "Claude Code" : name
+        return name.isEmpty || name == "/" ? fallback : name
     }
 }
 

@@ -40,12 +40,31 @@ public enum ClaudeHooks {
             hooks[event.name] = (hooks[event.name] as? [Any] ?? []) + [entry]
         }
         settings["hooks"] = hooks
+        // Claude Code tells only a status line how much of the plan is used. Ledge adds one that prints nothing, and
+        // only where there's none: someone else's stays, and then the usage stays unknown.
+        if settings["statusLine"] == nil { settings["statusLine"] = ["type": "command", "command": command] }
         return try serialize(settings)
     }
 
     /// The settings without Ledge's hooks.
     public static func disconnect(_ data: Data?) throws -> Data {
         try serialize(without(object(data)))
+    }
+
+    /// Whether the status line is Ledge's, so Claude Code passes it the plan's usage.
+    public static func relaysUsage(_ data: Data?) -> Bool {
+        guard let settings = try? object(data) else { return false }
+        return isOurStatusLine(settings["statusLine"])
+    }
+
+    /// Whether someone else's status line is set, so connecting leaves Claude Code's usage unknown.
+    public static func hasOtherStatusLine(_ data: Data?) -> Bool {
+        guard let line = (try? object(data))?["statusLine"] else { return false }
+        return !isOurStatusLine(line)
+    }
+
+    static func isOurStatusLine(_ value: Any?) -> Bool {
+        ((value as? [String: Any])?["command"] as? String)?.hasSuffix(marker) == true
     }
 
     /// The decision a permission request hook prints.
@@ -70,8 +89,9 @@ public enum ClaudeHooks {
     }
 
     static func without(_ settings: [String: Any]) -> [String: Any] {
-        guard var hooks = settings["hooks"] as? [String: Any] else { return settings }
         var settings = settings
+        if isOurStatusLine(settings["statusLine"]) { settings["statusLine"] = nil }
+        guard var hooks = settings["hooks"] as? [String: Any] else { return settings }
         for (event, entries) in hooks {
             guard let list = entries as? [Any] else { continue }
             let kept = list.filter { !isOurs($0) }
