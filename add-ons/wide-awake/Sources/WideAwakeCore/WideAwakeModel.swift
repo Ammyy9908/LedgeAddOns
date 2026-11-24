@@ -9,6 +9,8 @@ public enum Mode: String, Codable, Sendable, CaseIterable {
     case system
     public var name: String { self == .display ? "Display" : "System" }
     public var detail: String { self == .display ? "Screen and Mac stay awake" : "Mac stays awake, screen can turn off" }
+    /// The same, to go inside a sentence.
+    var phrase: String { self == .display ? "the screen and the Mac stay awake" : "the Mac stays awake, the screen can turn off" }
 }
 
 /// A time the person asked for: until `until`, or until they stop it when that's nil.
@@ -171,10 +173,9 @@ public struct WideAwakeModel: Sendable {
         if saved.startInstantly, saved.session == nil { start(minutes: saved.minutes, mode: saved.mode, now: now) }
     }
 
-    /// Starts keeping the Mac awake: for `minutes`, or until stopped when that's nil.
+    /// Starts keeping the Mac awake: for `minutes`, or until stopped when that's nil. Leaves the page's length and
+    /// mode alone, so an AI app's timer doesn't change them.
     public mutating func start(minutes: Int?, mode: Mode, now: Date) {
-        saved.mode = mode
-        if let minutes { saved.minutes = Length.clamp(minutes) }
         saved.session = Session(mode: mode, started: now, until: minutes.map { now.addingTimeInterval(TimeInterval(Length.clamp($0) * 60)) })
     }
 
@@ -231,10 +232,10 @@ public struct WideAwakeModel: Sendable {
     public func status(at now: Date) -> String {
         if let session = saved.session {
             let length = session.remaining(at: now).map { "for " + spoken($0) + " more" } ?? "until it's stopped"
-            return "The Mac is being kept awake (\(session.mode.detail.lowercased())) \(length)."
+            return "The Mac is being kept awake (\(session.mode.phrase)) \(length)."
         }
         if let mode = holding(at: now) {
-            return "The Mac is being kept awake automatically (\(mode.detail.lowercased())): \(reasons.joined(separator: ", "))."
+            return "The Mac is being kept awake automatically (\(mode.phrase)): \(reasons.joined(separator: ", "))."
         }
         return "The Mac sleeps normally."
     }

@@ -2,6 +2,11 @@
 
 Newest version first. Every new `version` in addon.json needs an entry here.
 
+## 0.1.1
+
+- A timer an AI app starts no longer changes the length and mode you set on the page.
+- AI apps read "the screen and the Mac stay awake" rather than "screen and mac stay awake".
+
 ## 0.1.0
 
 - A Wide Awake page in the notch: pick Display (screen and Mac) or System (the Mac only), drag the minute tape to
