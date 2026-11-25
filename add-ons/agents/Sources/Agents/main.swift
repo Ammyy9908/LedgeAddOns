@@ -350,6 +350,22 @@ actor Agents {
                                                screen: screen()))
         AddOnSession.show(settingsPage())
         AddOnSession.show(activities: activities())
+        AddOnSession.show(widgets: [widget()])
+    }
+
+    /// Home's widget, and the add-on's tile on the iPhone: the latest sessions and what each is doing.
+    private func widget() -> Widget {
+        let rows: [WidgetNode] = board.sorted.prefix(3).map { session in
+            .vstack(spacing: 2, children: [
+                .hstack(spacing: 6, children: [.text("\(session.agent.name) · \(session.folder)", style: .body), .spacer,
+                                               .text(Self.status(session.state), style: .caption)]),
+                .text(String(session.step.prefix(60)), style: .secondary),
+            ])
+        }
+        let content: WidgetNode = rows.isEmpty
+            ? .text("No sessions yet. Connect Claude Code or Codex in Settings.", style: .secondary)
+            : .vstack(spacing: 8, children: rows)
+        return Widget("agents", title: "Agents", symbol: "sparkle", content: content, compactContent: rows.first)
     }
 
     /// The most recently active session in the notch while it works, asks, or has just finished: the logo and progress,

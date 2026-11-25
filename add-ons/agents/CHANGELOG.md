@@ -2,6 +2,11 @@
 
 Newest version first. Every new `version` in addon.json needs an entry here.
 
+## 0.3.0
+
+- A Home widget lists your latest sessions and what each is doing. It also shows on your iPhone, under At a glance in
+  Add-ons, and opens the Agents page there.
+
 ## 0.2.0
 
 - While a session works or waits for your approval, opening the notch shows it in Home's place, and the closed notch

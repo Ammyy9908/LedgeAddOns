@@ -26,6 +26,8 @@ questions and approvals stay in Codex.
 - Beside the notch: the latest session's folder and step, like "ledge · Editing Notch.swift", a tick for a few
   seconds when it finishes, and a hand when it's waiting for permission.
 - On the add-on's page in the notch: every session, with its step and the lines its edits added and removed.
+- A Home widget: your latest three sessions and what each is doing. It also shows on your iPhone, under At a glance
+  in Add-ons, and opens the Agents page there.
 
 ## Approvals
 
