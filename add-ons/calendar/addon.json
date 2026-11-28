@@ -1,0 +1,26 @@
+{
+    "id": "calendar",
+    "version": "0.1.0",
+    "protocolVersion": 2,
+    "name": "Calendar",
+    "summary": "Your next meetings in the notch, with Join",
+    "description": "See what's next today in the notch: each event's time, and for the next one a countdown and a Join button when it has a Zoom, Google Meet, Teams, Webex or FaceTime link. Before a meeting, the closed notch counts down to it, and clicking it opens the page to join. Reads every calendar in the Mac's Calendar app, such as iCloud, Google and Exchange, without signing in to anything. It only reads them, and nothing leaves your Mac.",
+    "author": "Sumit",
+    "capabilities": [
+        "calendars"
+    ],
+    "surfaces": [
+        "notch-page",
+        "widget",
+        "settings-page",
+        "activity"
+    ],
+    "kit": {
+        "minAPI": "0.27.0"
+    },
+    "minMacOS": "14.0",
+    "executable": "Calendar",
+    "icon": "Assets/Icon.png",
+    "category": "Productivity",
+    "keywords": ["calendar", "events", "meetings", "zoom", "google meet", "teams", "agenda", "schedule", "join", "countdown"]
+}

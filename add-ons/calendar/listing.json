@@ -1,0 +1,8 @@
+{
+  "developer": "Sumit",
+  "category": "Productivity",
+  "availability": "Free · needs a Ledge with LedgeKit 0.27 and the calendars capability · macOS 14 or later",
+  "description": "Calendar puts your day in the notch. The widget shows your next events with their times, and the next one counts down with a Join button when it has a Zoom, Google Meet, Teams, Webex or FaceTime link. Before a meeting, the closed notch shows it counting down, from 5, 10 or 15 minutes ahead until it starts, and a click opens the page where you join. The page lists the rest of today and tomorrow. It reads every calendar in the Mac's Calendar app, such as iCloud, Google and Exchange, without signing in to anything. Allow Calendars once from its settings in Ledge. It only reads your events, never changes them, and nothing leaves your Mac.",
+  "feedbackURL": "https://github.com/Ammyy9908/LedgeAddOns/issues/new",
+  "screenshots": []
+}
