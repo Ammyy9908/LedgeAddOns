@@ -9,7 +9,7 @@ known. `python3 scripts/validate.py` runs the same checks on your machine.
 - An add-on is native code that Ledge runs on people's Macs. A maintainer reads every line before it merges.
 - Capabilities are open. Name the ones you use in `addon.json`; Ledge grants those it supports and keeps the
   rest off. Today it supports `spotify-library`, `notification-banners`, `apple-music-queue`,
-  `apple-music-controls`, `clipboard-write`, `hud` and, from LedgeKit 0.13.0, `notch-control`. If you need something new, open an **Add-on idea** issue, so support can be planned.
+  `apple-music-controls`, `clipboard-write`, `hud` and, from LedgeKit 0.13.0, `notch-control`. A capability can also need a macOS permission, which Ledge holds and asks for from the add-on's settings: `calendars` (Calendars) needs a Ledge that supports it. If you need something new, open an **Add-on idea** issue, so support can be planned.
 - Say what your add-on needs with the optional manifest v2 fields: `kit.minAPI` (the LedgeKit API level, such as
   `0.4.0`), `minLedge`, `minMacOS`, plus `category`, `creator`, `source` and `keywords`. The Store build copies the
   requirements into the catalog, so Ledge can tell people before they install.
